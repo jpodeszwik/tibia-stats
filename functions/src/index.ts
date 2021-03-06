@@ -59,12 +59,52 @@ const updateExp = async () => {
       .set({time: dateFormat(new Date(), "yyyy-mm-dd HH:MM")});
 };
 
-exports.forceUpdateExperience = functions.https.onRequest(async (req, res) => {
+const fetchGuildMembers: (guildName: string) => Promise<string[]> =
+  async (guildName: string) => {
+    const url = `https://api.tibiadata.com/v2/guild/${guildName}.json`;
+    return fetch(url)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.guild.error) {
+            throw res.guild.error;
+          }
+          return res.guild;
+        })
+        .then(parseGuild);
+  };
+
+const parseGuild: (guild: any) => string[] = (guild: any) => guild.members
+    .map((rank: any) => rank.characters)
+    .reduce((a: any[], b: any[]) => a.concat(b))
+    .map((member: any) => member.name);
+
+const updateGuildMembers = async () => {
+  const date = dateFormat(new Date(), "yyyy-mm-dd");
+  const guilds = ["Reapers", "Sleepers"];
+
+  for (let i = 0; i < guilds.length; i++) {
+    const guild = guilds[i];
+    await fetchGuildMembers(guild)
+        .then((members) =>
+          db.doc(`date/${date}/guild/${guild}`).update(
+              {members: admin.firestore.FieldValue.arrayUnion(...members)}))
+        .catch((err) =>
+          console.error(`Failed to fetch guild ${guild}: ${err}`));
+  }
+};
+
+exports.forceUpdateMembers = functions.https.onRequest((req, res) => {
+  updateGuildMembers().finally(() => res.end());
+});
+
+exports.updateMembers = functions.pubsub
+    .schedule("*/15 * * * * ")
+    .onRun((context) => updateGuildMembers());
+
+exports.forceUpdateExperience = functions.https.onRequest((req, res) => {
   updateExp().finally(() => res.end());
 });
 
 exports.updateExperience = functions.pubsub
     .schedule("*/15 * * * * ")
-    .onRun(async (context) => {
-      await updateExp();
-    });
+    .onRun((context) => updateExp());
