@@ -3,6 +3,9 @@ import fetch from "node-fetch";
 import * as dateFormat from "dateformat";
 import * as admin from "firebase-admin";
 
+const WORLD = "Peloria";
+const API = "https://api.tibiadata.com/v3";
+
 admin.initializeApp();
 
 const db = admin.firestore();
@@ -13,37 +16,30 @@ type ExpData = {
     exp: number
 };
 
-const fetchAllProfessions: () => Promise<ExpData[]> = async () => {
-  const professions = ["knight", "paladin", "druid", "sorcerer"]
-      .map(fetchProfession);
+const fetchAllProfessions: (world: string) => Promise<ExpData[]> =
+  async (world: string) => {
+    const professions = ["knight", "paladin", "druid", "sorcerer"]
+        .map((profession) => fetchProfession(world, profession));
 
-  const results = await Promise.all(professions);
-  return results.reduce((a, b) => a.concat(b));
-};
-
-const fetchProfession: (profession: string) => Promise<ExpData[]> =
-  async (profession: string) => {
-    const url = `https://api.tibiadata.com/v2/highscores/Peloria/exp/${profession}.json`;
-    console.log(url);
-    return fetch(url).then((res) => res.json())
-        .then((res) => res.highscores.data)
-        .then((data) => {
-          if (data.error) {
-            console.error(
-                `Failed to fetch profession ${profession}: ${data.error}`);
-            return [];
-          }
-
-          return data;
-        })
-        .then((rows: any[]) => rows.map((row) =>
-          ({name: row.name, vocation: row.vocation, exp: row.value})));
+    const results = await Promise.all(professions);
+    return results.reduce((a, b) => a.concat(b));
   };
+
+const fetchProfession: (world: string, profession: string) =>
+  Promise<ExpData[]> =
+    async (world: string, profession: string) => {
+      const url = `${API}/highscores/${world}/exp/${profession}`;
+      console.log(url);
+      return fetch(url).then((res) => res.json())
+          .then((res) => res.highscores.highscore_list)
+          .then((rows: any[]) => rows.map((row) =>
+            ({name: row.name, vocation: row.vocation, exp: row.value})));
+    };
 
 const updateExp = async () => {
   const batchSize = 500;
   const date = dateFormat(new Date(), "yyyy-mm-dd");
-  const res = await fetchAllProfessions();
+  const res = await fetchAllProfessions(WORLD);
 
   while (res.length > 0) {
     const batchRecords = res.splice(0, batchSize);
@@ -59,35 +55,43 @@ const updateExp = async () => {
       .set({time: dateFormat(new Date(), "yyyy-mm-dd HH:MM")});
 };
 
+const fetchGuilds: (world: string) => Promise<string[]> =
+  async (world: string) => {
+    const url = `${API}/guilds/${world}`;
+    return fetch(url)
+        .then((res) => res.json())
+        .then((res) => res.guilds.active
+            .map((guild: any) => guild.name)
+        );
+  };
+
 const fetchGuildMembers: (guildName: string) => Promise<string[]> =
   async (guildName: string) => {
-    const url = `https://api.tibiadata.com/v2/guild/${guildName}.json`;
+    const url = `${API}/guild/${guildName}`;
     return fetch(url)
         .then((res) => res.json())
         .then((res) => {
-          if (res.guild.error) {
-            throw res.guild.error;
+          if (res.guilds.guild.error) {
+            throw res.guilds.guild.error;
           }
-          return res.guild;
+          return res.guilds.guild;
         })
         .then(parseGuild);
   };
 
 const parseGuild: (guild: any) => string[] = (guild: any) => guild.members
-    .map((rank: any) => rank.characters)
-    .reduce((a: any[], b: any[]) => a.concat(b))
     .map((member: any) => member.name);
 
 const updateGuildMembers = async () => {
   const date = dateFormat(new Date(), "yyyy-mm-dd");
-  const guilds = ["Reapers", "Sleepers"];
+  const guilds = await fetchGuilds(WORLD);
 
   for (let i = 0; i < guilds.length; i++) {
     const guild = guilds[i];
     await fetchGuildMembers(guild)
         .then((members) =>
-          db.doc(`date/${date}/guild/${guild}`).update(
-              {members: admin.firestore.FieldValue.arrayUnion(...members)}))
+          db.doc(`date/${date}/guild/${guild}`).set(
+              {members: members}))
         .catch((err) =>
           console.error(`Failed to fetch guild ${guild}: ${err}`));
   }
@@ -98,7 +102,8 @@ exports.forceUpdateMembers = functions.https.onRequest((req, res) => {
 });
 
 exports.updateMembers = functions.pubsub
-    .schedule("*/15 * * * * ")
+    .schedule("10 10 * * * ")
+    .timeZone("Europe/Warsaw")
     .onRun((context) => updateGuildMembers());
 
 exports.forceUpdateExperience = functions.https.onRequest((req, res) => {
@@ -106,5 +111,6 @@ exports.forceUpdateExperience = functions.https.onRequest((req, res) => {
 });
 
 exports.updateExperience = functions.pubsub
-    .schedule("*/15 * * * * ")
+    .schedule("10 10 * * * ")
+    .timeZone("Europe/Warsaw")
     .onRun((context) => updateExp());
