@@ -6,6 +6,8 @@ import * as tibiadata from "./tibiadata";
 const PELORIA = "Peloria";
 const UPDATE_MBEMBERS_COMMANDS = "updateMembersCommands";
 const UPDATE_EXPERIENCE_COMMANDS = "updatExperienceCommands";
+const EXP_COLLECTION = "exp";
+const GUILD_COLLECTION = "guild";
 
 admin.initializeApp();
 
@@ -14,12 +16,18 @@ const db = admin.firestore();
 type ExpData = {
     name: string,
     vocation: string,
-    exp: number
+    exp: number,
+    date: string,
+};
+
+type GuildData = {
+  name: string,
+  members: string[],
+  date: string,
 };
 
 const saveExpData = async (expData: ExpData[]) => {
   const batchSize = 500;
-  const date = dateFormat(new Date(), "yyyy-mm-dd");
 
   while (expData.length > 0) {
     const batchRecords = expData.splice(0, batchSize);
@@ -27,28 +35,30 @@ const saveExpData = async (expData: ExpData[]) => {
 
     const batch = db.batch();
     batchRecords.forEach(
-        (val) => batch.set(db.doc(`date/${date}/char/${val.name}`), val));
+        (val) => batch.set(db.collection(EXP_COLLECTION).doc(), val));
     await batch.commit();
   }
 };
 
 const updateExp = async (world: string) => {
+  const date = dateFormat(new Date(), "yyyy-mm-dd");
   const expData = await tibiadata.fetchAllProfessionsHighscore(world, tibiadata.Highscore.EXP);
 
-  await saveExpData(expData.map((val) => ({name: val.name, vocation: val.vocation, exp: val.value})));
+  await saveExpData(expData.map((val) => ({name: val.name, vocation: val.vocation, exp: val.value, date: date})));
 };
 
 const updateGuildMembers = async (world: string) => {
   const guilds = await tibiadata.fetchGuilds(world);
+  const date = dateFormat(new Date(), "yyyy-mm-dd");
 
   await Promise.all(guilds.map((guild) => tibiadata.fetchGuild(guild.name)
-      .then((guildDetails) => saveGuildMembers(guildDetails.name, guildDetails.members.map((member) => member.name)))
+      .then((guildDetails) => saveGuild(
+          {name: guildDetails.name, members: guildDetails.members.map((member) => member.name), date: date}))
   ));
 };
 
-const saveGuildMembers = (guildName: string, members: string[]) => {
-  const date = dateFormat(new Date(), "yyyy-mm-dd");
-  return db.doc(`date/${date}/guild/${guildName}`).set({members: members});
+const saveGuild = (guild: GuildData) => {
+  return db.collection(GUILD_COLLECTION).add(guild);
 };
 
 const scheduleMembersUpdate = (world: string) =>
