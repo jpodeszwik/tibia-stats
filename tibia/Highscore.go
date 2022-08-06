@@ -26,12 +26,12 @@ const (
 
 type HighscoreResponse struct {
 	Name  string
-	Value int
+	Value int64
 }
 
 type highscore struct {
 	Name  string `json:"name"`
-	Value int    `json:"value"`
+	Value int64  `json:"value"`
 }
 
 type highscores struct {
