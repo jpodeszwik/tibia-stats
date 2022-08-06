@@ -5,40 +5,53 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 )
 
-type GuildMember struct {
+type GuildMemberResponse struct {
+	Name string
+}
+
+type GuildResponse struct {
+	Name    string
+	Members []GuildMemberResponse
+}
+
+type OverviewGuild struct {
+	Name string
+}
+
+type guildMember struct {
 	Name string `json:"name"`
 }
 
-type Guild struct {
+type guild struct {
 	Name    string        `json:"name"`
-	Members []GuildMember `json:"members"`
+	Members []guildMember `json:"members"`
 }
 
 type Guilds struct {
-	Guild Guild `json:"guild"`
+	Guild guild `json:"guild"`
 }
 
 type guildResponse struct {
 	Guilds Guilds `json:"guilds"`
 }
 
-type GuildClient struct {
-	httpClient *http.Client
-	baseUrl    string
+type overviewGuild struct {
+	Name string `json:"name"`
 }
 
-func NewGuildClient() *GuildClient {
-	return &GuildClient{
-		httpClient: newHttpClient(),
-		baseUrl:    "https://api.tibiadata.com",
-	}
+type overviewGuilds struct {
+	Active    []overviewGuild `json:"active"`
+	Formation []overviewGuild `json:"formation"`
 }
 
-func (hc *GuildClient) FetchGuild(guild string) (*Guild, error) {
-	url := fmt.Sprintf("%s/v3/guild/%s", hc.baseUrl, guild)
+type guildsOverviewResponse struct {
+	Guilds overviewGuilds `json:"guilds"`
+}
+
+func (hc *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
+	url := fmt.Sprintf("%s/v3/guild/%s", hc.baseUrl, guildName)
 	log.Printf("Fetching: %s", url)
 
 	resp, err := hc.httpClient.Get(url)
@@ -64,5 +77,44 @@ func (hc *GuildClient) FetchGuild(guild string) (*Guild, error) {
 		return nil, err
 	}
 
-	return &guildResponse.Guilds.Guild, nil
+	guild := guildResponse.Guilds.Guild
+
+	return &GuildResponse{
+		Name: guild.Name,
+		Members: mapSlice(guild.Members, func(in guildMember) GuildMemberResponse {
+			return GuildMemberResponse{Name: in.Name}
+		}),
+	}, nil
+}
+
+func (hc *ApiClient) FetchGuilds(world string) ([]OverviewGuild, error) {
+	url := fmt.Sprintf("%s/v3/guilds/%s", hc.baseUrl, world)
+	log.Printf("Fetching: %s", url)
+
+	resp, err := hc.httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Body != nil {
+		defer func() {
+			err := resp.Body.Close()
+			if err != nil {
+				log.Printf("Failed to close body %s", err)
+			}
+		}()
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	overviewGuildsResponse := guildsOverviewResponse{}
+	err = json.Unmarshal(body, &overviewGuildsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapSlice(overviewGuildsResponse.Guilds.Active, func(in overviewGuild) OverviewGuild {
+		return OverviewGuild{Name: in.Name}
+	}), nil
 }

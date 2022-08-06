@@ -23,7 +23,7 @@ func TestHighscoreClient_FetchAllHighscores(t *testing.T) {
 	}))
 	defer server.Close()
 
-	hc := &HighscoreClient{
+	hc := &ApiClient{
 		httpClient: server.Client(),
 		baseUrl:    server.URL,
 	}
@@ -59,7 +59,7 @@ func TestHighscoreClient_FetchHighscore(t *testing.T) {
 	}))
 	defer server.Close()
 
-	hc := &HighscoreClient{
+	hc := &ApiClient{
 		httpClient: server.Client(),
 		baseUrl:    server.URL,
 	}

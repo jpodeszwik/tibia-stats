@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
-	"time"
 )
 
 type Profession string
@@ -44,31 +42,7 @@ type highscoresResponse struct {
 	Highscores highscores `json:"highscores"`
 }
 
-type HighscoreClient struct {
-	httpClient *http.Client
-	baseUrl    string
-}
-
-func newHttpClient() *http.Client {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConns = 10
-	transport.MaxConnsPerHost = 10
-	transport.MaxIdleConnsPerHost = 10
-
-	return &http.Client{
-		Timeout:   time.Second * 10,
-		Transport: transport,
-	}
-}
-
-func NewHighscoreClient() *HighscoreClient {
-	return &HighscoreClient{
-		httpClient: newHttpClient(),
-		baseUrl:    "https://api.tibiadata.com",
-	}
-}
-
-func (hc *HighscoreClient) FetchHighscore(world string, profession Profession, highscoreType HighscoreType) ([]HighscoreResponse, error) {
+func (hc *ApiClient) FetchHighscore(world string, profession Profession, highscoreType HighscoreType) ([]HighscoreResponse, error) {
 	url := fmt.Sprintf("%s/v3/highscores/%s/%s/%s", hc.baseUrl, world, highscoreType, profession)
 	log.Printf("Fetching: %s", url)
 
@@ -104,7 +78,7 @@ type highscoreResult struct {
 	err        error
 }
 
-func (hc *HighscoreClient) FetchAllHighscores(world string, highscoreType HighscoreType) ([]HighscoreResponse, error) {
+func (hc *ApiClient) FetchAllHighscores(world string, highscoreType HighscoreType) ([]HighscoreResponse, error) {
 	retChannel := make(chan highscoreResult, 4)
 	for _, profession := range AllProfessions {
 		go func(profession2 Profession) {
