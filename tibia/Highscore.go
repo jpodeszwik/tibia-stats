@@ -2,6 +2,7 @@ package tibia
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -68,7 +69,7 @@ func NewHighscoreClient() *HighscoreClient {
 }
 
 func (hc *HighscoreClient) FetchHighscore(world string, profession Profession, highscoreType HighscoreType) ([]HighscoreResponse, error) {
-	url := hc.baseUrl + "/v3/highscores/" + world + "/" + string(highscoreType) + "/" + string(profession)
+	url := fmt.Sprintf("%s/v3/highscores/%s/%s/%s", hc.baseUrl, world, highscoreType, profession)
 	log.Printf("Fetching: %s", url)
 
 	resp, err := hc.httpClient.Get(url)
