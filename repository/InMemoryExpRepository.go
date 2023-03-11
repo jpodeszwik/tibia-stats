@@ -16,6 +16,16 @@ type inMemoryExpRepository struct {
 	data map[dateName]int64
 }
 
+func (i *inMemoryExpRepository) StoreExperiences(expData []ExpData) error {
+	for _, ed := range expData {
+		err := i.StoreExp(ed.Name, ed.Date, ed.Exp)
+		if nil != err {
+			return err
+		}
+	}
+	return nil
+}
+
 func (i *inMemoryExpRepository) StoreExp(name string, date time.Time, exp int64) error {
 	i.data[dateName{date: date.Format(isotime), name: name}] = exp
 	return nil
