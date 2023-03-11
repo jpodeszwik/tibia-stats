@@ -11,13 +11,15 @@ import (
 
 func TestHighscoreClient_FetchAllHighscores(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if strings.HasSuffix(req.RequestURI, "knight") {
+		if !strings.HasSuffix(req.RequestURI, "/1") {
+			rw.Write([]byte(`{"highscores":{"highscore_list":[]}}`))
+		} else if strings.Contains(req.RequestURI, "knight") {
 			rw.Write([]byte(`{"highscores":{"highscore_list":[{"name":"Knight Name","value":123456789}]}}`))
-		} else if strings.HasSuffix(req.RequestURI, "paladin") {
+		} else if strings.Contains(req.RequestURI, "paladin") {
 			rw.Write([]byte(`{"highscores":{"highscore_list":[{"name":"Paladin Name", "value":23456789}]}}`))
-		} else if strings.HasSuffix(req.RequestURI, "sorcerer") {
+		} else if strings.Contains(req.RequestURI, "sorcerer") {
 			rw.Write([]byte(`{"highscores":{"highscore_list":[{"name":"Sorcerer Name", "value": 3456789}]}}`))
-		} else if strings.HasSuffix(req.RequestURI, "druid") {
+		} else if strings.Contains(req.RequestURI, "druid") {
 			rw.Write([]byte(`{"highscores":{"highscore_list":[{"name":"Druid Name","value":456789}]}}`))
 		}
 	}))
@@ -64,7 +66,7 @@ func TestHighscoreClient_FetchHighscore(t *testing.T) {
 		baseUrl:    server.URL,
 	}
 
-	response, err := hc.FetchHighscore("Peloria", Knight, Exp)
+	response, err := hc.FetchHighscore("Peloria", Knight, Exp, 1)
 	if err != nil {
 		t.Errorf("Got error response %s", err)
 	}

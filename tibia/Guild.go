@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"tibia-exp-tracker/slices"
 )
 
 type GuildMemberResponse struct {
@@ -50,11 +51,10 @@ type guildsOverviewResponse struct {
 	Guilds overviewGuilds `json:"guilds"`
 }
 
-func (hc *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
-	url := fmt.Sprintf("%s/v3/guild/%s", hc.baseUrl, guildName)
-	log.Printf("Fetching: %s", url)
+func (ac *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
+	url := fmt.Sprintf("%s/v3/guild/%s", ac.baseUrl, guildName)
 
-	resp, err := hc.httpClient.Get(url)
+	resp, err := ac.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -81,17 +81,16 @@ func (hc *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
 
 	return &GuildResponse{
 		Name: guild.Name,
-		Members: mapSlice(guild.Members, func(in guildMember) GuildMemberResponse {
+		Members: slices.MapSlice(guild.Members, func(in guildMember) GuildMemberResponse {
 			return GuildMemberResponse{Name: in.Name}
 		}),
 	}, nil
 }
 
-func (hc *ApiClient) FetchGuilds(world string) ([]OverviewGuild, error) {
-	url := fmt.Sprintf("%s/v3/guilds/%s", hc.baseUrl, world)
-	log.Printf("Fetching: %s", url)
+func (ac *ApiClient) FetchGuilds(world string) ([]OverviewGuild, error) {
+	url := fmt.Sprintf("%s/v3/guilds/%s", ac.baseUrl, world)
 
-	resp, err := hc.httpClient.Get(url)
+	resp, err := ac.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (hc *ApiClient) FetchGuilds(world string) ([]OverviewGuild, error) {
 		return nil, err
 	}
 
-	return mapSlice(overviewGuildsResponse.Guilds.Active, func(in overviewGuild) OverviewGuild {
+	return slices.MapSlice(overviewGuildsResponse.Guilds.Active, func(in overviewGuild) OverviewGuild {
 		return OverviewGuild{Name: in.Name}
 	}), nil
 }

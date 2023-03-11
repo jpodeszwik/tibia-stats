@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"tibia-exp-tracker/slices"
 )
 
 type Profession string
@@ -42,11 +43,10 @@ type highscoresResponse struct {
 	Highscores highscores `json:"highscores"`
 }
 
-func (hc *ApiClient) FetchHighscore(world string, profession Profession, highscoreType HighscoreType) ([]HighscoreResponse, error) {
-	url := fmt.Sprintf("%s/v3/highscores/%s/%s/%s", hc.baseUrl, world, highscoreType, profession)
-	log.Printf("Fetching: %s", url)
+func (ac *ApiClient) FetchHighscore(world string, profession Profession, highscoreType HighscoreType, page int) ([]HighscoreResponse, error) {
+	url := fmt.Sprintf("%s/v3/highscores/%s/%s/%s/%d", ac.baseUrl, world, highscoreType, profession, page)
 
-	resp, err := hc.httpClient.Get(url)
+	resp, err := ac.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (hc *ApiClient) FetchHighscore(world string, profession Profession, highsco
 		return nil, err
 	}
 
-	return mapSlice(highscoreData.Highscores.HighscoreList, mapHighscore), nil
+	return slices.MapSlice(highscoreData.Highscores.HighscoreList, mapHighscore), nil
 }
 
 type highscoreResult struct {
@@ -78,22 +78,24 @@ type highscoreResult struct {
 	err        error
 }
 
-func (hc *ApiClient) FetchAllHighscores(world string, highscoreType HighscoreType) ([]HighscoreResponse, error) {
-	retChannel := make(chan highscoreResult, 4)
+func (ac *ApiClient) FetchAllHighscores(world string, highscoreType HighscoreType) ([]HighscoreResponse, error) {
+	retChannel := make(chan highscoreResult, 4*20)
 	for _, profession := range AllProfessions {
-		go func(profession2 Profession) {
-			res, err := hc.FetchHighscore(world, profession2, highscoreType)
-			retChannel <- highscoreResult{profession2, res, err}
-		}(profession)
+		for page := 1; page <= 20; page++ {
+			go func(profession2 Profession, page2 int) {
+				res, err := ac.FetchHighscore(world, profession2, highscoreType, page2)
+				retChannel <- highscoreResult{profession2, res, err}
+			}(profession, page)
+		}
 	}
 
 	var err error
 	var result []HighscoreResponse
 
-	for i := 0; i < len(AllProfessions); i++ {
+	for i := 0; i < 4*20; i++ {
 		highscoreResult := <-retChannel
 		if highscoreResult.err != nil {
-			log.Printf("Failed to fetch profession %s", highscoreResult.profession)
+			log.Printf("Failed to fetch profession %s, %v", highscoreResult.profession, highscoreResult.err)
 			err = highscoreResult.err
 		}
 		result = append(result, highscoreResult.response...)
@@ -107,14 +109,4 @@ func mapHighscore(h highscore) HighscoreResponse {
 		Name:  h.Name,
 		Value: h.Value,
 	}
-}
-
-func mapSlice[IN any, OUT any](input []IN, mapper func(IN) OUT) []OUT {
-	res := make([]OUT, 0)
-
-	for _, value := range input {
-		res = append(res, mapper(value))
-	}
-
-	return res
 }
