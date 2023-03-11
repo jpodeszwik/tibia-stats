@@ -32,3 +32,25 @@ func TestMapSlice_ChangeType(t *testing.T) {
 		t.Errorf("Response: %v does not match expected: %v", response, expected)
 	}
 }
+
+func TestSplitSlice_EqualSlices(t *testing.T) {
+	numbers := []int{1, 2, 3, 4}
+
+	response := SplitSlice(numbers, 2)
+
+	expected := [][]int{{1, 3}, {2, 4}}
+	if !reflect.DeepEqual(expected, response) {
+		t.Errorf("Response: %v does not match expected: %v", response, expected)
+	}
+}
+
+func TestSplitSlice_DifferentSlices(t *testing.T) {
+	numbers := []int{1, 2, 3, 4}
+
+	response := SplitSlice(numbers, 3)
+
+	expected := [][]int{{1, 4}, {2}, {3}}
+	if !reflect.DeepEqual(expected, response) {
+		t.Errorf("Response: %v does not match expected: %v", response, expected)
+	}
+}

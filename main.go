@@ -1,34 +1,32 @@
 package main
 
 import (
-	"database/sql"
-	"github.com/jpodeszwik/tibia-exp-tracker/repository"
 	_ "github.com/lib/pq"
 	"log"
-	"time"
+	"tibia-exp-tracker/actions"
+	"tibia-exp-tracker/postgres"
+	"tibia-exp-tracker/repository"
+	"tibia-exp-tracker/tibia"
 )
 
 func main() {
-	connStr := "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
+	db, err := postgres.InitializePostgresDb()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer postgres.CloseDb(db)
 
-	postgresRepository := repository.NewPostgresExpRepository(db)
+	expRepository := repository.NewPostgresExpRepository(db)
+	guildMemberRepository := repository.NewPostgresGuildMemberRepository(db)
+	apiClient := tibia.NewApiClient()
 
-	now := time.Now()
-	name := "Test Name"
-
-	err = postgresRepository.StoreExp(name, now, 34567)
-	if nil != err {
-		log.Fatal("Error", err)
-	}
-	exp, err := postgresRepository.GetExp(name, now)
-	if nil != err {
-		log.Fatal("Error", err)
+	err = actions.FetchExperience(apiClient, expRepository, "Peloria")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	log.Printf("Exp %v", exp)
+	err = actions.FetchGuildMembers(apiClient, guildMemberRepository, "Peloria")
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -9,3 +9,16 @@ func MapSlice[IN any, OUT any](input []IN, mapper func(IN) OUT) []OUT {
 
 	return res
 }
+
+func SplitSlice[IN any](input []IN, chunks int) [][]IN {
+	res := make([][]IN, 0)
+	for i := 0; i < chunks; i++ {
+		res = append(res, make([]IN, 0))
+	}
+
+	for i, value := range input {
+		res[i%chunks] = append(res[i%chunks], value)
+	}
+
+	return res
+}
