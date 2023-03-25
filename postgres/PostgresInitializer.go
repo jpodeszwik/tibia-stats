@@ -33,7 +33,7 @@ func InitializePostgresDb() (*sql.DB, error) {
 func CloseDb(db *sql.DB) {
 	err := db.Close()
 	if err != nil {
-		log.Printf("Error closing db %v", err)
+		log.Printf("Error closing dynamo %v", err)
 	}
 }
 

@@ -2,25 +2,20 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/lambda"
-	_ "github.com/lib/pq"
 	"log"
-	"tibia-exp-tracker/actions"
-	"tibia-exp-tracker/postgres"
-	"tibia-exp-tracker/repository"
+	"tibia-exp-tracker/domain"
+	"tibia-exp-tracker/dynamo"
 	"tibia-exp-tracker/tibia"
 )
 
 func HandleLambdaExecution() {
-	db, err := postgres.InitializePostgresDb()
+	expRepository, err := dynamo.InitializeExpRepository()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer postgres.CloseDb(db)
-
-	expRepository := repository.NewPostgresExpRepository(db)
 	apiClient := tibia.NewApiClient()
 
-	err = actions.FetchExperience(apiClient, expRepository, "Peloria")
+	err = domain.FetchExperience(apiClient, expRepository, "Peloria")
 	if err != nil {
 		log.Fatal(err)
 	}

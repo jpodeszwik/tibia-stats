@@ -1,4 +1,4 @@
-package actions
+package domain
 
 import (
 	"log"
@@ -24,24 +24,7 @@ func FetchExperience(ac *tibia.ApiClient, expRepository repository.ExpRepository
 		}
 	})
 
-	chunks := 8
-	expChunks := slices.SplitSlice(expData, chunks)
-	res := make(chan error, chunks)
-	defer close(res)
+	err = expRepository.StoreExperiences(expData)
 
-	for _, slice := range expChunks {
-		go func(eds []repository.ExpData) {
-			res <- expRepository.StoreExperiences(eds)
-		}(slice)
-	}
-
-	for i := 0; i < chunks; i++ {
-		err = <-res
-		if nil != err {
-			log.Printf("Error when storing chunk of data %v", err)
-		}
-	}
-
-	log.Printf("Done")
 	return nil
 }

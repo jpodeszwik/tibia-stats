@@ -1,10 +1,11 @@
-package repository
+package postgres
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 	"strings"
+	"tibia-exp-tracker/repository"
 	"time"
 )
 
@@ -27,31 +28,7 @@ func (p *postgresGuildMemberRepository) StoreGuildMembers(guild string, members 
 	return err
 }
 
-func (p *postgresGuildMemberRepository) StoreExperiences(expData []ExpData) error {
-	tx, err := p.db.Begin()
-	if err != nil {
-		return err
-	}
-
-	valuesStr := make([]string, 0)
-	values := make([]interface{}, 0)
-	for i, ed := range expData {
-		valuesStr = append(valuesStr, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
-		values = append(values, ed.Name)
-		values = append(values, ed.Date.Format(isotime))
-		values = append(values, ed.Exp)
-	}
-
-	query := "INSERT INTO exp(character_name, measure_date, exp_value) VALUES " + strings.Join(valuesStr, ",")
-	_, err = tx.Exec(query, values...)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
-}
-
-func NewPostgresGuildMemberRepository(db *sql.DB) GuildMemberRepository {
+func NewPostgresGuildMemberRepository(db *sql.DB) repository.GuildMemberRepository {
 	err := createGuildMemberTable(db)
 	if err != nil {
 		log.Fatal(err)

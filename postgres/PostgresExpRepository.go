@@ -1,18 +1,42 @@
-package repository
+package postgres
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 	"strings"
-	"time"
+	"tibia-exp-tracker/repository"
 )
+
+const isotime = "2006-01-02"
 
 type postgresExpRepository struct {
 	db *sql.DB
 }
 
-func (p *postgresExpRepository) StoreExperiences(expData []ExpData) error {
+func (p *postgresExpRepository) GetExpHistory(name string, limit int) ([]repository.ExpHistory, error) {
+	query := "SELECT measure_date, exp_value FROM exp WHERE character_name = $1 order by measure_date desc limit $2"
+	rows, err := p.db.Query(query, name, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	historySlice := make([]repository.ExpHistory, 0)
+
+	for rows.Next() {
+		var history repository.ExpHistory
+		err = rows.Scan(&history.Date, &history.Exp)
+		if err != nil {
+			return historySlice, err
+		}
+		historySlice = append(historySlice, history)
+	}
+
+	return historySlice, rows.Err()
+}
+
+func (p *postgresExpRepository) StoreExperiences(expData []repository.ExpData) error {
 	tx, err := p.db.Begin()
 	if err != nil {
 		return err
@@ -36,21 +60,7 @@ func (p *postgresExpRepository) StoreExperiences(expData []ExpData) error {
 	return tx.Commit()
 }
 
-func (p *postgresExpRepository) StoreExp(name string, date time.Time, exp int64) error {
-	query := "INSERT INTO exp(character_name, measure_date, exp_value) VALUES ($1, $2, $3)"
-	_, err := p.db.Exec(query, name, date.Format(isotime), exp)
-	return err
-}
-
-func (p *postgresExpRepository) GetExp(name string, date time.Time) (int64, error) {
-	query := "SELECT MAX(exp_value) FROM exp WHERE character_name = $1 AND measure_date = $2"
-	row := p.db.QueryRow(query, name, date.Format(isotime))
-	var value int64 = 0
-	err := row.Scan(&value)
-	return value, err
-}
-
-func NewPostgresExpRepository(db *sql.DB) ExpRepository {
+func NewPostgresExpRepository(db *sql.DB) repository.ExpRepository {
 	err := createExpTable(db)
 	if err != nil {
 		log.Fatal(err)
