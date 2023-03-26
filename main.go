@@ -1,22 +1,22 @@
 package main
 
 import (
-	_ "github.com/lib/pq"
 	"log"
 	"tibia-exp-tracker/domain"
-	"tibia-exp-tracker/postgres"
+	"tibia-exp-tracker/dynamo"
 	"tibia-exp-tracker/tibia"
 )
 
 func main() {
-	db, err := postgres.InitializePostgresDb()
+	expRepository, err := dynamo.InitializeExpRepository()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer postgres.CloseDb(db)
+	guildMemberRepository, err := dynamo.InitializeGuildMembersRepository()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	expRepository := postgres.NewPostgresExpRepository(db)
-	guildMemberRepository := postgres.NewPostgresGuildMemberRepository(db)
 	apiClient := tibia.NewApiClient()
 
 	err = domain.FetchExperience(apiClient, expRepository, "Peloria")
