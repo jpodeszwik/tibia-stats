@@ -9,6 +9,10 @@ import (
 	"tibia-exp-tracker/slices"
 )
 
+type LambdaEvent struct {
+	PathParameters GetExpEvent `json:"pathParameters"`
+}
+
 type GetExpEvent struct {
 	PlayerName string `json:"playerName"`
 }
@@ -18,13 +22,13 @@ type ExpRecord struct {
 	Exp  string `json:"exp"`
 }
 
-func HandleLambdaExecution(event GetExpEvent) ([]ExpRecord, error) {
+func HandleLambdaExecution(event LambdaEvent) ([]ExpRecord, error) {
 	expRepository, err := dynamo.InitializeExpRepository()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	expHistory, err := domain.GetExperienceHistory(expRepository, event.PlayerName)
+	expHistory, err := domain.GetExperienceHistory(expRepository, event.PathParameters.PlayerName)
 	if err != nil {
 		return nil, err
 	}

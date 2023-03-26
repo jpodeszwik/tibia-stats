@@ -13,6 +13,11 @@ type postgresGuildMemberRepository struct {
 	db *sql.DB
 }
 
+func (p *postgresGuildMemberRepository) GetGuildsHistory(guild string, limit int) ([]repository.Guild, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (p *postgresGuildMemberRepository) StoreGuildMembers(guild string, members []string) error {
 	valuesStr := make([]string, 0)
 	values := make([]interface{}, 0)

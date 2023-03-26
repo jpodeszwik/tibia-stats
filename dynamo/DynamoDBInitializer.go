@@ -44,7 +44,7 @@ func InitializeGuildMembersRepository() (repository.GuildMemberRepository, error
 
 	guildMembersTable, exists := os.LookupEnv("TIBIA_GUILD_MEMBERS_TABLE")
 	if !exists {
-		return nil, errors.New("TIBIA_EXP_TABLE not set")
+		return nil, errors.New("TIBIA_GUILD_MEMBERS_TABLE not set")
 	}
 
 	return NewDynamoDBGuildMemberRepository(client, guildMembersTable), nil
