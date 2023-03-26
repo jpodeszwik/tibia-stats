@@ -17,6 +17,9 @@ provider "aws" {
   }
 }
 
+data "aws_region" "current" {
+}
+
 resource "aws_dynamodb_table" "exp_table" {
   name         = "tibia-exp"
   billing_mode = "PAY_PER_REQUEST"
@@ -90,7 +93,7 @@ resource "aws_iam_policy" "lambda_log_policy" {
           "logs:PutLogEvents",
           "logs:CreateLogGroup"
         ]
-        "Resource" : "arn:aws:logs:eu-central-1:*:*"
+        "Resource" : "arn:aws:logs:${data.aws_region.current.name}:*:*"
       }
     ]
   })
