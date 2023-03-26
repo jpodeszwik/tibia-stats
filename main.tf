@@ -301,7 +301,7 @@ resource "aws_lambda_function" "load_guild_members" {
 }
 
 resource "aws_cloudwatch_event_rule" "load_player_exp" {
-  name = "load-player-exp-schedule"
+  name                = "load-player-exp-schedule"
   schedule_expression = "cron(0 11 * * ? *)"
 }
 
@@ -320,7 +320,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_load_player_exp" {
 }
 
 resource "aws_cloudwatch_event_rule" "load_guild_members" {
-  name = "load-guild-members-schedule"
+  name                = "load-guild-members-schedule"
   schedule_expression = "cron(0 11 * * ? *)"
 }
 
@@ -336,4 +336,66 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_load_guild_members" {
   function_name = aws_lambda_function.load_guild_members.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.load_guild_members.arn
+}
+
+resource "aws_apigatewayv2_api" "tibia" {
+  name          = "tibia"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_stage" "tibia" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  name        = "$default"
+  auto_deploy = true
+}
+
+resource "aws_apigatewayv2_integration" "get_player_exp" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  integration_uri        = aws_lambda_function.get_tibia_exp.invoke_arn
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "get_player_exp" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  route_key = "GET /playerExp/{playerName}"
+  target    = "integrations/${aws_apigatewayv2_integration.get_player_exp.id}"
+}
+
+resource "aws_lambda_permission" "api_gateway_get_player_exp" {
+  statement_id  = "api_gateway_get_player_exp"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_tibia_exp.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "get_guild_members_history" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  integration_uri        = aws_lambda_function.get_tibia_guild_members_history.invoke_arn
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "get_guild_members_history" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  route_key = "GET /guildMembersHistory/{guildName}"
+  target    = "integrations/${aws_apigatewayv2_integration.get_guild_members_history.id}"
+}
+
+resource "aws_lambda_permission" "api_gateway_get_guild_members_history" {
+  statement_id  = "api_gateway_get_guild_members_history"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_tibia_guild_members_history.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
 }
