@@ -129,12 +129,13 @@ data "archive_file" "get_exp" {
 }
 
 resource "aws_lambda_function" "get_tibia_exp" {
-  function_name = "get-tibia-exp"
-  filename      = "get_exp.zip"
-  role          = aws_iam_role.get_tibia_exp_role.arn
-  handler       = "main"
-
+  function_name    = "get-tibia-exp"
+  filename         = data.archive_file.get_exp.output_path
   source_code_hash = data.archive_file.get_exp.output_base64sha256
+
+  role    = aws_iam_role.get_tibia_exp_role.arn
+  handler = "main"
+
 
   runtime = "go1.x"
 
@@ -180,12 +181,12 @@ data "archive_file" "get_guild_members_history" {
 }
 
 resource "aws_lambda_function" "get_tibia_guild_members_history" {
-  function_name = "get-tibia-guild-members-history"
-  filename      = "get_guild_members_history.zip"
-  role          = aws_iam_role.get_guild_members_history_role.arn
-  handler       = "main"
+  function_name    = "get-tibia-guild-members-history"
+  filename         = data.archive_file.get_guild_members_history.output_path
+  source_code_hash = data.archive_file.get_guild_members_history.output_base64sha256
 
-  source_code_hash = data.archive_file.get_exp.output_base64sha256
+  role    = aws_iam_role.get_guild_members_history_role.arn
+  handler = "main"
 
   runtime = "go1.x"
 
@@ -231,12 +232,12 @@ data "archive_file" "load_players_exp" {
 }
 
 resource "aws_lambda_function" "load_players_exp" {
-  function_name = "load-players-exp"
-  filename      = "load_players_exp.zip"
-  role          = aws_iam_role.load_players_exp.arn
-  handler       = "main"
+  function_name    = "load-players-exp"
+  filename         = data.archive_file.load_players_exp.output_path
+  source_code_hash = data.archive_file.load_players_exp.output_base64sha256
 
-  source_code_hash = data.archive_file.get_exp.output_base64sha256
+  role    = aws_iam_role.load_players_exp.arn
+  handler = "main"
 
   runtime = "go1.x"
 
@@ -282,12 +283,12 @@ data "archive_file" "load_guild_members" {
 }
 
 resource "aws_lambda_function" "load_guild_members" {
-  function_name = "load-tibia-guild-members"
-  filename      = "load_guild_members.zip"
-  role          = aws_iam_role.load_guild_members.arn
-  handler       = "main"
+  function_name    = "load-tibia-guild-members"
+  filename         = data.archive_file.load_guild_members.output_path
+  source_code_hash = data.archive_file.load_guild_members.output_base64sha256
 
-  source_code_hash = data.archive_file.get_exp.output_base64sha256
+  role    = aws_iam_role.load_guild_members.arn
+  handler = "main"
 
   runtime = "go1.x"
 
