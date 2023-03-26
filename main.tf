@@ -299,3 +299,41 @@ resource "aws_lambda_function" "load_guild_members" {
     }
   }
 }
+
+resource "aws_cloudwatch_event_rule" "load_player_exp" {
+  name = "load-player-exp-schedule"
+  schedule_expression = "cron(0 11 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "load_player_exp" {
+  rule      = aws_cloudwatch_event_rule.load_player_exp.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.load_players_exp.arn
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch_to_load_player_exp" {
+  statement_id  = "allow_cloudwatch_to_load_player_exp"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.load_players_exp.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.load_player_exp.arn
+}
+
+resource "aws_cloudwatch_event_rule" "load_guild_members" {
+  name = "load-guild-members-schedule"
+  schedule_expression = "cron(0 11 * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "load_guild_members" {
+  rule      = aws_cloudwatch_event_rule.load_guild_members.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.load_guild_members.arn
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch_to_load_guild_members" {
+  statement_id  = "allow_cloudwatch_to_load_guild_members"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.load_guild_members.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.load_guild_members.arn
+}
