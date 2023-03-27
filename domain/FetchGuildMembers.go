@@ -55,8 +55,11 @@ func fetchAndStoreGuild(guildName string, ac *tibia.ApiClient, mr repository.Gui
 		return err
 	}
 
-	memberNames := slices.MapSlice(guild.Members, func(in tibia.GuildMemberResponse) string {
-		return in.Name
+	memberNames := slices.MapSlice(guild.Members, func(in tibia.GuildMemberResponse) repository.GuildMember {
+		return repository.GuildMember{
+			Name:  in.Name,
+			Level: in.Level,
+		}
 	})
 
 	return mr.StoreGuildMembers(guildName, memberNames)

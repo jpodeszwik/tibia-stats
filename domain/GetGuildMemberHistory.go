@@ -2,6 +2,7 @@ package domain
 
 import (
 	"tibia-exp-tracker/repository"
+	"tibia-exp-tracker/slices"
 )
 
 type Action string
@@ -34,6 +35,7 @@ type HistoryRecord struct {
 	Date       string
 	PlayerName string
 	Action     Action
+	Level      *int
 }
 
 func GetGuildMemberHistory(memberRepository repository.GuildMemberRepository, guild string) ([]HistoryRecord, error) {
@@ -50,27 +52,40 @@ func GetGuildMemberHistory(memberRepository repository.GuildMemberRepository, gu
 	return ret, nil
 }
 
+func getLevel(level int) *int {
+	if level == 0 {
+		return nil
+	}
+	return &level
+}
+
+func memberName(in repository.GuildMember) string {
+	return in.Name
+}
+
 func getDiff(currentDay repository.Guild, previousDay repository.Guild) []HistoryRecord {
-	currentMembers := NewStringSet(currentDay.Members)
-	previousMembers := NewStringSet(previousDay.Members)
+	currentMembers := NewStringSet(slices.MapSlice(currentDay.Members, memberName))
+	previousMembers := NewStringSet(slices.MapSlice(currentDay.Members, memberName))
 
 	ret := make([]HistoryRecord, 0)
 
 	for _, member := range currentDay.Members {
-		if !previousMembers.Contains(member) {
+		if !previousMembers.Contains(member.Name) {
 			ret = append(ret, HistoryRecord{
 				Date:       currentDay.Date,
-				PlayerName: member,
+				PlayerName: member.Name,
+				Level:      getLevel(member.Level),
 				Action:     JOIN,
 			})
 		}
 	}
 
 	for _, member := range previousDay.Members {
-		if !currentMembers.Contains(member) {
+		if !currentMembers.Contains(member.Name) {
 			ret = append(ret, HistoryRecord{
 				Date:       currentDay.Date,
-				PlayerName: member,
+				PlayerName: member.Name,
+				Level:      getLevel(member.Level),
 				Action:     LEAVE,
 			})
 		}

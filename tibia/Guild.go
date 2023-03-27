@@ -9,7 +9,8 @@ import (
 )
 
 type GuildMemberResponse struct {
-	Name string
+	Name  string
+	Level int
 }
 
 type GuildResponse struct {
@@ -22,7 +23,8 @@ type OverviewGuild struct {
 }
 
 type guildMember struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	Level int    `json:"level"`
 }
 
 type guild struct {
@@ -82,7 +84,10 @@ func (ac *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
 	return &GuildResponse{
 		Name: guild.Name,
 		Members: slices.MapSlice(guild.Members, func(in guildMember) GuildMemberResponse {
-			return GuildMemberResponse{Name: in.Name}
+			return GuildMemberResponse{
+				Name:  in.Name,
+				Level: in.Level,
+			}
 		}),
 	}, nil
 }

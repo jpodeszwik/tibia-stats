@@ -2,11 +2,16 @@ package repository
 
 type Guild struct {
 	Name    string
-	Members []string
+	Members []GuildMember
 	Date    string
 }
 
+type GuildMember struct {
+	Name  string
+	Level int
+}
+
 type GuildMemberRepository interface {
-	StoreGuildMembers(guild string, members []string) error
+	StoreGuildMembers(guild string, members []GuildMember) error
 	GetGuildsHistory(guild string, limit int) ([]Guild, error)
 }

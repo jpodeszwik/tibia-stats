@@ -55,12 +55,34 @@ func (d *dynamoDBGuildMemberRepository) GetGuildsHistory(guild string, limit int
 		if !ok {
 			return repository.Guild{}, errors.New("failed to deserialize members")
 		}
-		members, err := slices.MapSliceWithError(membersInt, func(in interface{}) (string, error) {
+		members, err := slices.MapSliceWithError(membersInt, func(in interface{}) (repository.GuildMember, error) {
 			s, ok := in.(string)
-			if !ok {
-				return s, errors.New("failed to deserialize member")
+			if ok {
+				return repository.GuildMember{
+					Name: s,
+				}, nil
 			}
-			return s, nil
+
+			m, ok := in.(map[string]interface{})
+			if !ok {
+				return repository.GuildMember{}, errors.New("failed to deserialize member")
+			}
+			name, ok := m["name"].(string)
+			if !ok {
+				return repository.GuildMember{}, errors.New("failed to deserialize member")
+			}
+
+			level, ok := m["level"].(float64)
+			if !ok {
+				return repository.GuildMember{
+					Name: name,
+				}, nil
+			}
+
+			return repository.GuildMember{
+				Name:  name,
+				Level: int(level),
+			}, nil
 		})
 
 		if err != nil {
@@ -75,11 +97,18 @@ func (d *dynamoDBGuildMemberRepository) GetGuildsHistory(guild string, limit int
 	})
 }
 
-func (d *dynamoDBGuildMemberRepository) StoreGuildMembers(guild string, members []string) error {
+func (d *dynamoDBGuildMemberRepository) StoreGuildMembers(guild string, members []repository.GuildMember) error {
+	mem := slices.MapSlice(members, func(in repository.GuildMember) map[string]interface{} {
+		return map[string]interface{}{
+			"name":  in.Name,
+			"level": in.Level,
+		}
+	})
+
 	m := map[string]interface{}{
 		"guildName": guild,
 		"date":      time.Now().Format(isotime),
-		"members":   members,
+		"members":   mem,
 	}
 
 	marshalled, err := attributevalue.MarshalMap(m)
