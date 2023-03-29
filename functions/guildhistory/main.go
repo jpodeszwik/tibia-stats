@@ -20,6 +20,7 @@ type GuildHistoryRecord struct {
 	PlayerName string `json:"playerName"`
 	Date       string `json:"date"`
 	Action     string `json:"action"`
+	Level      int    `json:"level,omitempty"`
 }
 
 func HandleLambdaExecution(event LambdaEvent) ([]GuildHistoryRecord, error) {
@@ -38,6 +39,7 @@ func HandleLambdaExecution(event LambdaEvent) ([]GuildHistoryRecord, error) {
 			Date:       in.Date,
 			PlayerName: in.PlayerName,
 			Action:     string(in.Action),
+			Level:      in.Level,
 		}
 	}), nil
 }

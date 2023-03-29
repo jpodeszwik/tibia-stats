@@ -35,7 +35,7 @@ type HistoryRecord struct {
 	Date       string
 	PlayerName string
 	Action     Action
-	Level      *int
+	Level      int
 }
 
 func GetGuildMemberHistory(memberRepository repository.GuildMemberRepository, guild string) ([]HistoryRecord, error) {
@@ -74,7 +74,7 @@ func getDiff(currentDay repository.Guild, previousDay repository.Guild) []Histor
 			ret = append(ret, HistoryRecord{
 				Date:       currentDay.Date,
 				PlayerName: member.Name,
-				Level:      getLevel(member.Level),
+				Level:      member.Level,
 				Action:     JOIN,
 			})
 		}
@@ -85,7 +85,7 @@ func getDiff(currentDay repository.Guild, previousDay repository.Guild) []Histor
 			ret = append(ret, HistoryRecord{
 				Date:       currentDay.Date,
 				PlayerName: member.Name,
-				Level:      getLevel(member.Level),
+				Level:      member.Level,
 				Action:     LEAVE,
 			})
 		}
