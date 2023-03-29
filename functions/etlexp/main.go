@@ -15,7 +15,7 @@ func HandleLambdaExecution() {
 	}
 	apiClient := tibia.NewApiClient()
 
-	err = domain.FetchExperience(apiClient, expRepository, "Peloria")
+	err = domain.FetchExperience(apiClient, expRepository)
 	if err != nil {
 		log.Fatal(err)
 	}

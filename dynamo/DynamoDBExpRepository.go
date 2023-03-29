@@ -2,6 +2,7 @@ package dynamo
 
 import (
 	"context"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -23,28 +24,47 @@ func (d dynamoDBExpRepository) StoreExperiences(expData []repository.ExpData) er
 	expDataChunks := slices.SplitSlice(expData, chunks)
 	log.Printf("Chunks %v", len(expDataChunks))
 
+	expDataChan := make(chan []repository.ExpData, chunks)
+	for _, chunk := range expDataChunks {
+		expDataChan <- chunk
+	}
+	close(expDataChan)
+
 	ret := make(chan error, chunks)
 	defer close(ret)
 
-	for _, chunk := range expDataChunks {
-		go func(chunk2 []repository.ExpData) {
-			writeRequests := slices.MapSlice(chunk2, mapExpData)
-			_, err := d.dynamoDB.BatchWriteItem(context.Background(), &dynamodb.BatchWriteItemInput{
-				RequestItems: map[string][]types.WriteRequest{
-					d.tableName: writeRequests,
-				},
-			})
-			ret <- err
-		}(chunk)
+	workers := 8
+	for i := 0; i < workers; i++ {
+		go func() {
+			for chunk := range expDataChan {
+				writeRequests := slices.MapSlice(chunk, mapExpData)
+				_, err := d.dynamoDB.BatchWriteItem(context.Background(), &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						d.tableName: writeRequests,
+					},
+				})
+				ret <- err
+			}
+		}()
 	}
 
-	var err error
+	errs := make([]error, 0)
 	for i := 0; i < chunks; i++ {
-		err = <-ret
-		log.Printf("%v done %v ", i+1, err)
+		if i%100 == 0 && i != 0 {
+			log.Printf("%v done", i)
+		}
+		err := <-ret
+		if err != nil {
+			log.Printf("Error storing %v", err)
+			errs = append(errs, err)
+		}
 	}
 
-	return err
+	if len(errs) > 0 {
+		return fmt.Errorf("%v errors storing data", len(errs))
+	}
+
+	return nil
 }
 
 func (d dynamoDBExpRepository) GetExpHistory(name string, limit int) ([]repository.ExpHistory, error) {
@@ -54,7 +74,7 @@ func (d dynamoDBExpRepository) GetExpHistory(name string, limit int) ([]reposito
 		ScanIndexForward: aws.Bool(false),
 		Limit:            aws.Int32(int32(limit)),
 		KeyConditions: map[string]types.Condition{
-			"playerName": types.Condition{
+			"playerName": {
 				ComparisonOperator: types.ComparisonOperatorEq,
 				AttributeValueList: []types.AttributeValue{
 					&types.AttributeValueMemberS{Value: name},

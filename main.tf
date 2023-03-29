@@ -230,7 +230,7 @@ resource "aws_iam_role" "load_players_exp" {
 
 data "archive_file" "load_players_exp" {
   type        = "zip"
-  source_file = "functions/exp/main"
+  source_file = "functions/etlexp/main"
   output_path = "load_players_exp.zip"
 }
 
@@ -244,7 +244,7 @@ resource "aws_lambda_function" "load_players_exp" {
 
   runtime = "go1.x"
 
-  timeout = 300
+  timeout = 600
 
   environment {
     variables = {
@@ -281,7 +281,7 @@ resource "aws_iam_role" "load_guild_members" {
 
 data "archive_file" "load_guild_members" {
   type        = "zip"
-  source_file = "functions/guild/main"
+  source_file = "functions/etlguild/main"
   output_path = "load_guild_members.zip"
 }
 

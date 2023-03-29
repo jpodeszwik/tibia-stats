@@ -12,7 +12,7 @@ func HandleLambdaExecution() {
 	guildMemberRepository, err := dynamo.InitializeGuildMembersRepository()
 	apiClient := tibia.NewApiClient()
 
-	err = domain.FetchGuildMembers(apiClient, guildMemberRepository, "Peloria")
+	err = domain.ETLGuildMembers(apiClient, guildMemberRepository)
 	if err != nil {
 		log.Fatal(err)
 	}
