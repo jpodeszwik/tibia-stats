@@ -528,6 +528,12 @@ resource "aws_amplify_app" "tibia_stats_ui" {
     status = "404-200"
     target = "/index.html"
   }
+
+  custom_rule {
+    source = "/api/<*>"
+    status = "200"
+    target = "${aws_apigatewayv2_api.tibia.api_endpoint}/<*>"
+  }
 }
 
 resource "aws_route53domains_registered_domain" "tibia_stats_domain" {
