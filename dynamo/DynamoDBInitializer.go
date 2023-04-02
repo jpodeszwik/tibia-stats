@@ -49,3 +49,18 @@ func InitializeGuildMembersRepository() (repository.GuildMemberRepository, error
 
 	return NewDynamoDBGuildMemberRepository(client, guildMembersTable), nil
 }
+
+func InitializeGuildRepository() (repository.GuildRepository, error) {
+	client, err := initializeDynamoDB()
+	if err != nil {
+		log.Printf("unable to initialize DynamoDB, %v", err)
+		return nil, err
+	}
+
+	guildsTable, exists := os.LookupEnv("TIBIA_GUILDS_TABLE")
+	if !exists {
+		return nil, errors.New("TIBIA_GUILDS_TABLE not set")
+	}
+
+	return NewDynamoDBGuildRepository(client, guildsTable), nil
+}

@@ -39,7 +39,7 @@ type HistoryRecord struct {
 }
 
 func GetGuildMemberHistory(memberRepository repository.GuildMemberRepository, guild string) ([]HistoryRecord, error) {
-	guildHistory, err := memberRepository.GetGuildsHistory(guild, 30)
+	guildHistory, err := memberRepository.GetGuildMembersHistory(guild, 30)
 	if err != nil {
 		return nil, err
 	}
@@ -52,20 +52,13 @@ func GetGuildMemberHistory(memberRepository repository.GuildMemberRepository, gu
 	return ret, nil
 }
 
-func getLevel(level int) *int {
-	if level == 0 {
-		return nil
-	}
-	return &level
-}
-
 func memberName(in repository.GuildMember) string {
 	return in.Name
 }
 
 func getDiff(currentDay repository.Guild, previousDay repository.Guild) []HistoryRecord {
 	currentMembers := NewStringSet(slices.MapSlice(currentDay.Members, memberName))
-	previousMembers := NewStringSet(slices.MapSlice(currentDay.Members, memberName))
+	previousMembers := NewStringSet(slices.MapSlice(previousDay.Members, memberName))
 
 	ret := make([]HistoryRecord, 0)
 

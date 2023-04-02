@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"strings"
 	"tibia-exp-tracker/repository"
 	"tibia-exp-tracker/slices"
 	"time"
@@ -17,8 +18,8 @@ type dynamoDBGuildMemberRepository struct {
 	tableName string
 }
 
-func (d *dynamoDBGuildMemberRepository) GetGuildsHistory(guild string, limit int) ([]repository.Guild, error) {
-	out, err := d.client.Query(context.Background(), &dynamodb.QueryInput{
+func (d *dynamoDBGuildMemberRepository) GetGuildMembersHistory(guild string, limit int) ([]repository.Guild, error) {
+	return d.queryGuild(&dynamodb.QueryInput{
 		TableName:        aws.String(d.tableName),
 		IndexName:        aws.String("guildName-date-index"),
 		ScanIndexForward: aws.Bool(false),
@@ -32,6 +33,10 @@ func (d *dynamoDBGuildMemberRepository) GetGuildsHistory(guild string, limit int
 			},
 		},
 	})
+}
+
+func (d *dynamoDBGuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]repository.Guild, error) {
+	out, err := d.client.Query(context.Background(), queryInput)
 
 	if err != nil {
 		return nil, err
@@ -106,9 +111,10 @@ func (d *dynamoDBGuildMemberRepository) StoreGuildMembers(guild string, members 
 	})
 
 	m := map[string]interface{}{
-		"guildName": guild,
-		"date":      time.Now().Format(isotime),
-		"members":   mem,
+		"guildName":      guild,
+		"lowerGuildName": strings.ToLower(guild),
+		"date":           time.Now().Format(isotime),
+		"members":        mem,
 	}
 
 	marshalled, err := attributevalue.MarshalMap(m)

@@ -14,7 +14,7 @@ type fetchWorldResponse struct {
 	err    error
 }
 
-func ETLGuildMembers(ac *tibia.ApiClient, memberRepository repository.GuildMemberRepository) error {
+func ETLGuildMembers(ac *tibia.ApiClient, guildRepository repository.GuildRepository, memberRepository repository.GuildMemberRepository) error {
 	worlds, err := ac.FetchWorlds()
 	if err != nil {
 		return err
@@ -55,6 +55,13 @@ func ETLGuildMembers(ac *tibia.ApiClient, memberRepository repository.GuildMembe
 			continue
 		}
 		allGuilds = append(allGuilds, worldResponse.guilds...)
+	}
+
+	err = guildRepository.StoreGuilds(slices.MapSlice(allGuilds, func(in tibia.OverviewGuild) string {
+		return in.Name
+	}))
+	if err != nil {
+		log.Printf("failed to store guilds %v", err)
 	}
 
 	log.Printf("Found %v guilds", len(allGuilds))

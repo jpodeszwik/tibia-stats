@@ -13,5 +13,5 @@ type GuildMember struct {
 
 type GuildMemberRepository interface {
 	StoreGuildMembers(guild string, members []GuildMember) error
-	GetGuildsHistory(guild string, limit int) ([]Guild, error)
+	GetGuildMembersHistory(guild string, limit int) ([]Guild, error)
 }
