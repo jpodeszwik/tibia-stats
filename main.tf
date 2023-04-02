@@ -499,3 +499,52 @@ resource "aws_lambda_permission" "list_guilds" {
 
   source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
 }
+
+resource "aws_amplify_app" "tibia_stats_ui" {
+  name       = "tibia-stats-ui"
+  repository = "https://github.com/jpodeszwik/tibia-stats-ui"
+
+  build_spec = <<-EOT
+    version: 1
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: /dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+  EOT
+
+  custom_rule {
+    source = "/<*>"
+    status = "404-200"
+    target = "/index.html"
+  }
+}
+
+resource "aws_route53domains_registered_domain" "tibia_stats_domain" {
+  domain_name = "tibiastats.org"
+}
+
+resource "aws_amplify_domain_association" "example" {
+  app_id      = aws_amplify_app.tibia_stats_ui.id
+  domain_name = aws_route53domains_registered_domain.tibia_stats_domain.domain_name
+
+  sub_domain {
+    branch_name = "master"
+    prefix      = ""
+  }
+
+  sub_domain {
+    branch_name = "master"
+    prefix      = "www"
+  }
+}
