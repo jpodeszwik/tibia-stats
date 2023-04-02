@@ -1,4 +1,5 @@
+.idea
+*.zip
 main
-main.zip
 terraform.*
 .terraform*
