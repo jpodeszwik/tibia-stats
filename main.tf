@@ -365,7 +365,7 @@ resource "aws_lambda_function" "load_guild_members" {
   environment {
     variables = {
       TIBIA_GUILD_MEMBERS_TABLE = aws_dynamodb_table.guild_members_table.name
-      TIBIA_GUILDS_TABLE = aws_dynamodb_table.guilds_table.name
+      TIBIA_GUILDS_TABLE        = aws_dynamodb_table.guilds_table.name
     }
   }
 }
@@ -373,6 +373,7 @@ resource "aws_lambda_function" "load_guild_members" {
 resource "aws_cloudwatch_event_rule" "load_player_exp" {
   name                = "load-player-exp-schedule"
   schedule_expression = "cron(0 11 * * ? *)"
+  is_enabled          = false
 }
 
 resource "aws_cloudwatch_event_target" "load_player_exp" {
@@ -420,7 +421,7 @@ resource "aws_apigatewayv2_api" "tibia" {
 }
 
 resource "aws_apigatewayv2_stage" "tibia" {
-  api_id = aws_apigatewayv2_api.tibia.id
+  api_id      = aws_apigatewayv2_api.tibia.id
   name        = "$default"
   auto_deploy = true
 }

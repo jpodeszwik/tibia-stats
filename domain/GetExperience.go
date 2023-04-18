@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"tibia-exp-tracker/repository"
+	"tibia-stats/repository"
 )
 
 func GetExperienceHistory(expRepository repository.ExpRepository, name string) ([]repository.ExpHistory, error) {

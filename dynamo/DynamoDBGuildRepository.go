@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"reflect"
-	"tibia-exp-tracker/repository"
-	"tibia-exp-tracker/slices"
+	"tibia-stats/repository"
+	"tibia-stats/slices"
 	"time"
 )
 

@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"log"
 	"os"
-	"tibia-exp-tracker/repository"
+	"tibia-stats/repository"
 )
 
 func initializeDynamoDB() (client *dynamodb.Client, err error) {

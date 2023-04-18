@@ -3,9 +3,9 @@ package domain
 import (
 	"log"
 	"sync"
-	"tibia-exp-tracker/repository"
-	"tibia-exp-tracker/slices"
-	"tibia-exp-tracker/tibia"
+	"tibia-stats/repository"
+	"tibia-stats/slices"
+	"tibia-stats/tibia"
 )
 
 type fetchWorldResponse struct {

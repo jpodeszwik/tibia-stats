@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"tibia-exp-tracker/domain"
-	"tibia-exp-tracker/dynamo"
-	"tibia-exp-tracker/tibia"
+	"tibia-stats/domain"
+	"tibia-stats/dynamo"
+	"tibia-stats/tibia"
 )
 
 func HandleLambdaExecution() {

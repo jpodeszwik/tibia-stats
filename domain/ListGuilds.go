@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"tibia-exp-tracker/repository"
+	"tibia-stats/repository"
 )
 
 func ListGuilds(guildRepository repository.GuildRepository) ([]string, error) {

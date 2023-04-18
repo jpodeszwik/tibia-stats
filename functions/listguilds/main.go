@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"tibia-exp-tracker/domain"
-	"tibia-exp-tracker/dynamo"
+	"tibia-stats/domain"
+	"tibia-stats/dynamo"
 )
 
 func HandleLambdaExecution() ([]string, error) {

@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"tibia-exp-tracker/domain"
-	"tibia-exp-tracker/dynamo"
-	"tibia-exp-tracker/slices"
+	"tibia-stats/domain"
+	"tibia-stats/dynamo"
+	"tibia-stats/slices"
 )
 
 type LambdaEvent struct {

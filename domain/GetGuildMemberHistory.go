@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"tibia-exp-tracker/repository"
-	"tibia-exp-tracker/slices"
+	"tibia-stats/repository"
+	"tibia-stats/slices"
 )
 
 type Action string

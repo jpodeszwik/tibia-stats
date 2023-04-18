@@ -1,4 +1,4 @@
-module tibia-exp-tracker
+module tibia-stats
 
 go 1.19
 

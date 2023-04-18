@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"tibia-exp-tracker/slices"
+	"tibia-stats/slices"
 )
 
 type WorldResponse struct {
