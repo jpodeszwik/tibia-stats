@@ -45,11 +45,11 @@ func TestSplitSlice_EqualSlices(t *testing.T) {
 }
 
 func TestSplitSlice_DifferentSlices(t *testing.T) {
-	numbers := []int{1, 2, 3, 4}
+	numbers := []int{1, 2, 3, 4, 5}
 
-	response := SplitSlice(numbers, 3)
+	response := SplitSlice(numbers, 2)
 
-	expected := [][]int{{1, 4}, {2}, {3}}
+	expected := [][]int{{1, 4}, {2, 5}, {3}}
 	if !reflect.DeepEqual(expected, response) {
 		t.Errorf("Response: %v does not match expected: %v", response, expected)
 	}

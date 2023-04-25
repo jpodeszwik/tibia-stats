@@ -42,6 +42,10 @@ resource "aws_dynamodb_table" "exp_table" {
     range_key       = "date"
     projection_type = "ALL"
   }
+
+  tags = {
+    Table = "tibia-exp"
+  }
 }
 
 resource "aws_dynamodb_table" "guild_members_table" {
@@ -66,6 +70,10 @@ resource "aws_dynamodb_table" "guild_members_table" {
     range_key       = "date"
     projection_type = "ALL"
   }
+
+  tags = {
+    Table = "tibia-guild-members"
+  }
 }
 
 resource "aws_dynamodb_table" "guilds_table" {
@@ -76,6 +84,10 @@ resource "aws_dynamodb_table" "guilds_table" {
   attribute {
     name = "date"
     type = "S"
+  }
+
+  tags = {
+    Table = "tibia-guilds"
   }
 }
 
@@ -370,6 +382,62 @@ resource "aws_lambda_function" "load_guild_members" {
   }
 }
 
+resource "aws_iam_role" "list_guilds_deaths_role" {
+  name               = "list_guilds_deaths_role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  managed_policy_arns = [
+    aws_iam_policy.lambda_log_policy.arn
+  ]
+
+  inline_policy {
+    name   = "list_guilds_inline_policy"
+    policy = jsonencode({
+      Version   = "2012-10-17",
+      Statement = [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "dynamodb:Query",
+            "dynamodb:Scan",
+          ]
+          "Resource" : [
+            aws_dynamodb_table.death_table.arn,
+            "${aws_dynamodb_table.death_table.arn}/*",
+          ]
+        }
+      ]
+    })
+  }
+}
+
+data "archive_file" "list_guilds_deaths" {
+  type        = "zip"
+  source_file = "functions/guilddeaths/main"
+  output_path = "list_guild_deaths.zip"
+}
+
+resource "aws_lambda_function" "list_guilds_deaths" {
+  function_name    = "list-guilds-deaths"
+  filename         = data.archive_file.list_guilds_deaths.output_path
+  source_code_hash = data.archive_file.list_guilds_deaths.output_base64sha256
+
+  role    = aws_iam_role.list_guilds_deaths_role.arn
+  handler = "main"
+
+  runtime = "go1.x"
+
+  timeout = 10
+
+  environment {
+    variables = {
+      DEATH_TABLE_NAME = aws_dynamodb_table.death_table.name
+      DEATH_TABLE_CHARACTER_NAME_DATE_INDEX = "characterName-time-index"
+      DEATH_TABLE_GUILD_TIME_INDEX= "guild-time-index"
+    }
+  }
+}
+
 resource "aws_cloudwatch_event_rule" "load_player_exp" {
   name                = "load-player-exp-schedule"
   schedule_expression = "cron(0 11 * * ? *)"
@@ -446,6 +514,31 @@ resource "aws_lambda_permission" "api_gateway_get_player_exp" {
   statement_id  = "api_gateway_get_player_exp"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_tibia_exp.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_integration" "list_guilds_deaths" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  integration_uri        = aws_lambda_function.list_guilds_deaths.invoke_arn
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "list_guilds_deaths" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  route_key = "GET /guildDeaths/{guildName}"
+  target    = "integrations/${aws_apigatewayv2_integration.list_guilds_deaths.id}"
+}
+
+resource "aws_lambda_permission" "api_gateway_list_guilds_deaths" {
+  statement_id  = "api_gateway_list_guilds_deaths"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.list_guilds_deaths.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
@@ -554,4 +647,73 @@ resource "aws_amplify_domain_association" "example" {
     branch_name = "master"
     prefix      = "www"
   }
+}
+
+resource "aws_dynamodb_table" "death_table" {
+  name         = "tibia-death"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "characterName"
+  range_key    = "time"
+
+  attribute {
+    name = "characterName"
+    type = "S"
+  }
+
+  attribute {
+    name = "time"
+    type = "S"
+  }
+
+  attribute {
+    name = "guild"
+    type = "S"
+  }
+
+  local_secondary_index {
+    name            = "characterName-time-index"
+    range_key       = "time"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "guild-time-index"
+    hash_key        = "guild"
+    range_key       = "time"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Table = "tibia-death"
+  }
+}
+
+resource "aws_iam_user" "death_tracker" {
+  name = "death-tracker"
+}
+
+resource "aws_iam_access_key" "death_tracker" {
+  user = aws_iam_user.death_tracker.name
+}
+
+data "aws_iam_policy_document" "allow_death_tracker_death_table" {
+  statement {
+    effect  = "Allow"
+    actions = [
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:PutItem",
+      "dynamodb:BatchWriteItem",
+    ]
+    resources = [
+      aws_dynamodb_table.death_table.arn,
+      "${aws_dynamodb_table.death_table.arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_user_policy" "allow_death_tracker_death_table" {
+  name   = "allow_death_tracker_death_table"
+  user   = aws_iam_user.death_tracker.name
+  policy = data.aws_iam_policy_document.allow_death_tracker_death_table.json
 }

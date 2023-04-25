@@ -19,12 +19,12 @@ func NewApiClient() *ApiClient {
 
 func newHttpClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConns = 10
-	transport.MaxConnsPerHost = 10
-	transport.MaxIdleConnsPerHost = 10
+	transport.MaxIdleConns = 20
+	transport.MaxConnsPerHost = 20
+	transport.MaxIdleConnsPerHost = 20
 
 	return &http.Client{
-		Timeout:   time.Second * 10,
+		Timeout:   time.Second * 20,
 		Transport: transport,
 	}
 }

@@ -32,8 +32,10 @@ func MapBy[IN any](input []IN, mapper func(IN) string) map[string]IN {
 	return res
 }
 
-func SplitSlice[IN any](input []IN, chunks int) [][]IN {
-	res := make([][]IN, 0)
+func SplitSlice[IN any](input []IN, maxChunkSize int) [][]IN {
+	chunks := calculateChunks(len(input), maxChunkSize)
+
+	var res [][]IN
 	for i := 0; i < chunks; i++ {
 		res = append(res, make([]IN, 0))
 	}
@@ -43,4 +45,13 @@ func SplitSlice[IN any](input []IN, chunks int) [][]IN {
 	}
 
 	return res
+}
+
+func calculateChunks(count int, maxChunkSize int) int {
+	chunks := count / maxChunkSize
+
+	if count%maxChunkSize == 0 {
+		return chunks
+	}
+	return chunks + 1
 }

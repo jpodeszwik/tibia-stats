@@ -64,3 +64,27 @@ func InitializeGuildRepository() (repository.GuildRepository, error) {
 
 	return NewDynamoDBGuildRepository(client, guildsTable), nil
 }
+
+func InitializeDeathRepository() (*DeathRepository, error) {
+	client, err := initializeDynamoDB()
+	if err != nil {
+		return nil, err
+	}
+
+	deathtable, exists := os.LookupEnv("DEATH_TABLE_NAME")
+	if !exists {
+		return nil, errors.New("DEATH_TABLE_NAME not set")
+	}
+
+	characterNameIndex, exists := os.LookupEnv("DEATH_TABLE_CHARACTER_NAME_DATE_INDEX")
+	if !exists {
+		return nil, errors.New("DEATH_TABLE_CHARACTER_NAME_DATE_INDEX not set")
+	}
+
+	guildTimeIndex, exists := os.LookupEnv("DEATH_TABLE_GUILD_TIME_INDEX")
+	if !exists {
+		return nil, errors.New("DEATH_TABLE_GUILD_TIME_INDEX not set")
+	}
+
+	return NewDeathRepository(client, deathtable, characterNameIndex, guildTimeIndex), nil
+}

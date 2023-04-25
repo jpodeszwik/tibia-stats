@@ -20,17 +20,16 @@ type dynamoDBExpRepository struct {
 }
 
 func (d dynamoDBExpRepository) StoreExperiences(expData []repository.ExpData) error {
-	chunks := calculateChunks(len(expData), 25)
-	expDataChunks := slices.SplitSlice(expData, chunks)
+	expDataChunks := slices.SplitSlice(expData, 25)
 	log.Printf("Chunks %v", len(expDataChunks))
 
-	expDataChan := make(chan []repository.ExpData, chunks)
+	expDataChan := make(chan []repository.ExpData, len(expDataChunks))
 	for _, chunk := range expDataChunks {
 		expDataChan <- chunk
 	}
 	close(expDataChan)
 
-	ret := make(chan error, chunks)
+	ret := make(chan error, len(expDataChunks))
 	defer close(ret)
 
 	workers := 8
@@ -49,7 +48,7 @@ func (d dynamoDBExpRepository) StoreExperiences(expData []repository.ExpData) er
 	}
 
 	errs := make([]error, 0)
-	for i := 0; i < chunks; i++ {
+	for i := 0; i < len(expDataChunks); i++ {
 		if i%100 == 0 && i != 0 {
 			log.Printf("%v done", i)
 		}
@@ -116,15 +115,6 @@ func mapExpData(ed repository.ExpData) types.WriteRequest {
 			Item: marshalled,
 		},
 	}
-}
-
-func calculateChunks(count int, maxChunkSize int) int {
-	chunks := count / maxChunkSize
-
-	if count%maxChunkSize == 0 {
-		return chunks
-	}
-	return chunks + 1
 }
 
 func NewDynamoDBExpRepository(db *dynamodb.Client, tableName string) repository.ExpRepository {
