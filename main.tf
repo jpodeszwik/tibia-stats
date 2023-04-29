@@ -707,7 +707,9 @@ data "aws_iam_policy_document" "allow_death_tracker_death_table" {
     ]
     resources = [
       aws_dynamodb_table.death_table.arn,
-      "${aws_dynamodb_table.death_table.arn}/*"
+      "${aws_dynamodb_table.death_table.arn}/*",
+      aws_dynamodb_table.guild_exp_table.arn,
+      "${aws_dynamodb_table.guild_exp_table.arn}/*",
     ]
   }
 }
@@ -716,4 +718,31 @@ resource "aws_iam_user_policy" "allow_death_tracker_death_table" {
   name   = "allow_death_tracker_death_table"
   user   = aws_iam_user.death_tracker.name
   policy = data.aws_iam_policy_document.allow_death_tracker_death_table.json
+}
+
+resource "aws_dynamodb_table" "guild_exp_table" {
+  name         = "guild-exp"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "guildName"
+  range_key    = "date"
+
+  attribute {
+    name = "guildName"
+    type = "S"
+  }
+
+  attribute {
+    name = "date"
+    type = "S"
+  }
+
+  local_secondary_index {
+    name            = "guildName-date-index"
+    range_key       = "date"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Table = "tibia-guild-exp"
+  }
 }

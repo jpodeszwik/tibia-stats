@@ -13,14 +13,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	guildExpRepository, err := dynamo.InitializeGuildExpRepository()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	apiClient := tibia.NewApiClient()
 	ot := scraper.NewOnlineScraper(apiClient)
 	ot.Start()
 
-	dh := tracker.NewDeathTracker(dr)
-	dt := scraper.NewCharacterProfilesScraper(apiClient, ot, dh)
+	dt := scraper.NewCharacterProfilesScraper(apiClient, ot, tracker.NewDeathTracker(dr))
 	dt.Start()
+
+	guildExperience := scraper.NewGuildExperience(apiClient, tracker.NewGuildExp(guildExpRepository))
+	guildExperience.Start()
 
 	select {}
 }

@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type Guild struct {
 	Name    string
 	Members []GuildMember
@@ -9,4 +11,10 @@ type Guild struct {
 type GuildMember struct {
 	Name  string
 	Level int
+}
+
+type GuildExp struct {
+	GuildName string
+	Exp       int64
+	Date      time.Time
 }

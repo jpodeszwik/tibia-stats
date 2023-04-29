@@ -28,11 +28,9 @@ func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, dh *tr
 
 func (dt *CharacterProfilesScraper) Start() {
 	log.Printf("Starting")
-
-	refreshProfilesTicker := time.NewTicker(refreshProfilesInterval)
-	dt.refreshProfiles()
-
 	go func() {
+		refreshProfilesTicker := time.NewTicker(refreshProfilesInterval)
+		dt.refreshProfiles()
 		for range refreshProfilesTicker.C {
 			dt.refreshProfiles()
 		}

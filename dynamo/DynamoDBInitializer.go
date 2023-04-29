@@ -87,3 +87,17 @@ func InitializeDeathRepository() (*DeathRepository, error) {
 
 	return NewDeathRepository(client, deathtable, characterNameIndex, guildTimeIndex), nil
 }
+
+func InitializeGuildExpRepository() (*GuildExpRepository, error) {
+	client, err := initializeDynamoDB()
+	if err != nil {
+		return nil, err
+	}
+
+	guildExpTable, exists := os.LookupEnv("GUILD_EXP_TABLE_NAME")
+	if !exists {
+		return nil, errors.New("GUILD_EXP_TABLE_NAME not set")
+	}
+
+	return NewGuildExpRepository(client, guildExpTable), nil
+}
