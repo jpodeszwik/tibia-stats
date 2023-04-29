@@ -58,14 +58,16 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 	}
 
 	for _, world := range worlds {
-		players, err := ot.api.FetchOnlinePlayers(world.Name)
-		if err != nil {
-			log.Printf("Failed to fetch players %v", err)
-			continue
-		}
-
-		for _, player := range players {
-			newLastSeen[player.Name] = time.Now()
+		for i := 0; i < 3; i++ {
+			players, err := ot.api.FetchOnlinePlayers(world.Name)
+			if err != nil {
+				log.Printf("Failed to fetch players %v", err)
+			} else {
+				for _, player := range players {
+					newLastSeen[player.Name] = time.Now()
+				}
+				break
+			}
 		}
 	}
 
