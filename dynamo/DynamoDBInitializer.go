@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"log"
 	"os"
-	"tibia-stats/repository"
 )
 
 func initializeDynamoDB() (client *dynamodb.Client, err error) {
@@ -20,7 +19,7 @@ func initializeDynamoDB() (client *dynamodb.Client, err error) {
 	return dynamodb.NewFromConfig(cfg), nil
 }
 
-func InitializeExpRepository() (repository.ExpRepository, error) {
+func InitializeExpRepository() (*ExpRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
 		log.Printf("unable to initialize DynamoDB, %v", err)
@@ -32,10 +31,10 @@ func InitializeExpRepository() (repository.ExpRepository, error) {
 		return nil, errors.New("TIBIA_EXP_TABLE not set")
 	}
 
-	return NewDynamoDBExpRepository(client, expTable), nil
+	return NewExpRepository(client, expTable), nil
 }
 
-func InitializeGuildMembersRepository() (repository.GuildMemberRepository, error) {
+func InitializeGuildMembersRepository() (*GuildMemberRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
 		log.Printf("unable to initialize DynamoDB, %v", err)
@@ -47,10 +46,10 @@ func InitializeGuildMembersRepository() (repository.GuildMemberRepository, error
 		return nil, errors.New("TIBIA_GUILD_MEMBERS_TABLE not set")
 	}
 
-	return NewDynamoDBGuildMemberRepository(client, guildMembersTable), nil
+	return NewGuildMemberRepository(client, guildMembersTable), nil
 }
 
-func InitializeGuildRepository() (repository.GuildRepository, error) {
+func InitializeGuildRepository() (*GuildRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
 		log.Printf("unable to initialize DynamoDB, %v", err)
@@ -62,7 +61,7 @@ func InitializeGuildRepository() (repository.GuildRepository, error) {
 		return nil, errors.New("TIBIA_GUILDS_TABLE not set")
 	}
 
-	return NewDynamoDBGuildRepository(client, guildsTable), nil
+	return NewGuildRepository(client, guildsTable), nil
 }
 
 func InitializeDeathRepository() (*DeathRepository, error) {

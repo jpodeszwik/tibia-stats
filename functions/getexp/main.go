@@ -5,7 +5,6 @@ import (
 	"log"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
-	"tibia-stats/repository"
 	"tibia-stats/slices"
 )
 
@@ -28,12 +27,12 @@ func HandleLambdaExecution(event LambdaEvent) ([]ExpRecord, error) {
 		log.Fatal(err)
 	}
 
-	expHistory, err := domain.GetExperienceHistory(expRepository, event.PathParameters.PlayerName)
+	expHistory, err := expRepository.GetExpHistory(event.PathParameters.PlayerName, 30)
 	if err != nil {
 		return nil, err
 	}
 
-	return slices.MapSlice(expHistory, func(in repository.ExpHistory) ExpRecord {
+	return slices.MapSlice(expHistory, func(in domain.ExpHistory) ExpRecord {
 		return ExpRecord{
 			Exp:  in.Exp,
 			Date: in.Date,

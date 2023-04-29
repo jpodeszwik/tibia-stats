@@ -1,4 +1,4 @@
-package repository
+package domain
 
 type ExpHistory struct {
 	Date string

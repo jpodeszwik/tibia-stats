@@ -8,17 +8,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strings"
-	"tibia-stats/repository"
+	"tibia-stats/domain"
 	"tibia-stats/slices"
 	"time"
 )
 
-type dynamoDBGuildMemberRepository struct {
+type GuildMemberRepository struct {
 	client    *dynamodb.Client
 	tableName string
 }
 
-func (d *dynamoDBGuildMemberRepository) GetGuildMembersHistory(guild string, limit int) ([]repository.Guild, error) {
+func (d *GuildMemberRepository) GetGuildMembersHistory(guild string, limit int) ([]domain.Guild, error) {
 	return d.queryGuild(&dynamodb.QueryInput{
 		TableName:        aws.String(d.tableName),
 		IndexName:        aws.String("guildName-date-index"),
@@ -35,66 +35,66 @@ func (d *dynamoDBGuildMemberRepository) GetGuildMembersHistory(guild string, lim
 	})
 }
 
-func (d *dynamoDBGuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]repository.Guild, error) {
+func (d *GuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]domain.Guild, error) {
 	out, err := d.client.Query(context.Background(), queryInput)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return slices.MapSliceWithError(out.Items, func(in map[string]types.AttributeValue) (repository.Guild, error) {
+	return slices.MapSliceWithError(out.Items, func(in map[string]types.AttributeValue) (domain.Guild, error) {
 		m := make(map[string]interface{})
 		err = attributevalue.UnmarshalMap(in, &m)
 
 		guildName, ok := m["guildName"].(string)
 		if !ok {
-			return repository.Guild{}, errors.New("failed to deserialize guild name")
+			return domain.Guild{}, errors.New("failed to deserialize guild name")
 		}
 
 		date, ok := m["date"].(string)
 		if !ok {
-			return repository.Guild{}, errors.New("failed to deserialize date")
+			return domain.Guild{}, errors.New("failed to deserialize date")
 		}
 
 		membersInt, ok := m["members"].([]interface{})
 		if !ok {
-			return repository.Guild{}, errors.New("failed to deserialize members")
+			return domain.Guild{}, errors.New("failed to deserialize members")
 		}
-		members, err := slices.MapSliceWithError(membersInt, func(in interface{}) (repository.GuildMember, error) {
+		members, err := slices.MapSliceWithError(membersInt, func(in interface{}) (domain.GuildMember, error) {
 			s, ok := in.(string)
 			if ok {
-				return repository.GuildMember{
+				return domain.GuildMember{
 					Name: s,
 				}, nil
 			}
 
 			m, ok := in.(map[string]interface{})
 			if !ok {
-				return repository.GuildMember{}, errors.New("failed to deserialize member")
+				return domain.GuildMember{}, errors.New("failed to deserialize member")
 			}
 			name, ok := m["name"].(string)
 			if !ok {
-				return repository.GuildMember{}, errors.New("failed to deserialize member")
+				return domain.GuildMember{}, errors.New("failed to deserialize member")
 			}
 
 			level, ok := m["level"].(float64)
 			if !ok {
-				return repository.GuildMember{
+				return domain.GuildMember{
 					Name: name,
 				}, nil
 			}
 
-			return repository.GuildMember{
+			return domain.GuildMember{
 				Name:  name,
 				Level: int(level),
 			}, nil
 		})
 
 		if err != nil {
-			return repository.Guild{}, err
+			return domain.Guild{}, err
 		}
 
-		return repository.Guild{
+		return domain.Guild{
 			Name:    guildName,
 			Members: members,
 			Date:    date,
@@ -102,8 +102,8 @@ func (d *dynamoDBGuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInp
 	})
 }
 
-func (d *dynamoDBGuildMemberRepository) StoreGuildMembers(guild string, members []repository.GuildMember) error {
-	mem := slices.MapSlice(members, func(in repository.GuildMember) map[string]interface{} {
+func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain.GuildMember) error {
+	mem := slices.MapSlice(members, func(in domain.GuildMember) map[string]interface{} {
 		return map[string]interface{}{
 			"name":  in.Name,
 			"level": in.Level,
@@ -130,6 +130,6 @@ func (d *dynamoDBGuildMemberRepository) StoreGuildMembers(guild string, members 
 	return err
 }
 
-func NewDynamoDBGuildMemberRepository(client *dynamodb.Client, tableName string) repository.GuildMemberRepository {
-	return &dynamoDBGuildMemberRepository{client: client, tableName: tableName}
+func NewGuildMemberRepository(client *dynamodb.Client, tableName string) *GuildMemberRepository {
+	return &GuildMemberRepository{client: client, tableName: tableName}
 }

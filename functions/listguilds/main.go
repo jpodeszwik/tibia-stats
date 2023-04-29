@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 )
 
@@ -13,7 +12,7 @@ func HandleLambdaExecution() ([]string, error) {
 		log.Fatal(err)
 	}
 
-	return domain.ListGuilds(guildRepository)
+	return guildRepository.ListGuilds()
 }
 
 func main() {

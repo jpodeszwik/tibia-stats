@@ -10,17 +10,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"reflect"
-	"tibia-stats/repository"
 	"tibia-stats/slices"
 	"time"
 )
 
-type dynamoDBGuildRepository struct {
+type GuildRepository struct {
 	client    *dynamodb.Client
 	tableName string
 }
 
-func (d *dynamoDBGuildRepository) ListGuilds() ([]string, error) {
+func (d *GuildRepository) ListGuilds() ([]string, error) {
 	out, err := d.client.Query(context.Background(), &dynamodb.QueryInput{
 		TableName: aws.String(d.tableName),
 		KeyConditions: map[string]types.Condition{
@@ -56,7 +55,7 @@ func (d *dynamoDBGuildRepository) ListGuilds() ([]string, error) {
 	return nil, errors.New("guild not found")
 }
 
-func (d *dynamoDBGuildRepository) StoreGuilds(guilds []string) error {
+func (d *GuildRepository) StoreGuilds(guilds []string) error {
 	m := map[string]interface{}{
 		"guilds": guilds,
 		"date":   time.Now().Format(isotime),
@@ -75,6 +74,6 @@ func (d *dynamoDBGuildRepository) StoreGuilds(guilds []string) error {
 	return err
 }
 
-func NewDynamoDBGuildRepository(client *dynamodb.Client, tableName string) repository.GuildRepository {
-	return &dynamoDBGuildRepository{client: client, tableName: tableName}
+func NewGuildRepository(client *dynamodb.Client, tableName string) *GuildRepository {
+	return &GuildRepository{client: client, tableName: tableName}
 }

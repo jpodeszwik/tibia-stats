@@ -8,22 +8,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
-	"tibia-stats/repository"
+	"tibia-stats/domain"
 	"tibia-stats/slices"
 )
 
 const isotime = "2006-01-02"
 
-type dynamoDBExpRepository struct {
+type ExpRepository struct {
 	dynamoDB  *dynamodb.Client
 	tableName string
 }
 
-func (d dynamoDBExpRepository) StoreExperiences(expData []repository.ExpData) error {
+func (d ExpRepository) StoreExperiences(expData []domain.ExpData) error {
 	expDataChunks := slices.SplitSlice(expData, 25)
 	log.Printf("Chunks %v", len(expDataChunks))
 
-	expDataChan := make(chan []repository.ExpData, len(expDataChunks))
+	expDataChan := make(chan []domain.ExpData, len(expDataChunks))
 	for _, chunk := range expDataChunks {
 		expDataChan <- chunk
 	}
@@ -66,7 +66,7 @@ func (d dynamoDBExpRepository) StoreExperiences(expData []repository.ExpData) er
 	return nil
 }
 
-func (d dynamoDBExpRepository) GetExpHistory(name string, limit int) ([]repository.ExpHistory, error) {
+func (d ExpRepository) GetExpHistory(name string, limit int) ([]domain.ExpHistory, error) {
 	out, err := d.dynamoDB.Query(context.Background(), &dynamodb.QueryInput{
 		TableName:        aws.String(d.tableName),
 		IndexName:        aws.String("playerName-date-index"),
@@ -86,18 +86,18 @@ func (d dynamoDBExpRepository) GetExpHistory(name string, limit int) ([]reposito
 		return nil, err
 	}
 
-	return slices.MapSlice(out.Items, func(in map[string]types.AttributeValue) repository.ExpHistory {
+	return slices.MapSlice(out.Items, func(in map[string]types.AttributeValue) domain.ExpHistory {
 		m := make(map[string]string)
 		err = attributevalue.UnmarshalMap(in, &m)
 
-		return repository.ExpHistory{
+		return domain.ExpHistory{
 			Date: m["date"],
 			Exp:  m["exp"],
 		}
 	}), nil
 }
 
-func mapExpData(ed repository.ExpData) types.WriteRequest {
+func mapExpData(ed domain.ExpData) types.WriteRequest {
 	m := map[string]interface{}{
 		"playerName": ed.Name,
 		"date":       ed.Date.Format(isotime),
@@ -117,6 +117,6 @@ func mapExpData(ed repository.ExpData) types.WriteRequest {
 	}
 }
 
-func NewDynamoDBExpRepository(db *dynamodb.Client, tableName string) repository.ExpRepository {
-	return &dynamoDBExpRepository{dynamoDB: db, tableName: tableName}
+func NewExpRepository(db *dynamodb.Client, tableName string) *ExpRepository {
+	return &ExpRepository{dynamoDB: db, tableName: tableName}
 }
