@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const guildExperienceRefreshInterval = 4 * time.Hour
+const guildExperienceRefreshInterval = 2 * time.Hour
 
 type GuildExperience struct {
 	api     *tibia.ApiClient
@@ -35,11 +35,14 @@ func (ge *GuildExperience) fetchGuildsExperience() error {
 		return err
 	}
 	ret := make(map[string]int64)
-
 	for _, world := range worlds {
-		_, err := ge.fetchWorldGuildsExperience(world.Name)
+		guildsExp, err := ge.fetchWorldGuildsExperience(world.Name)
 		if err != nil {
 			log.Printf("Failed to fetch experience for world %v", world.Name)
+			continue
+		}
+		for guildName, exp := range guildsExp {
+			ret[guildName] = exp
 		}
 	}
 
