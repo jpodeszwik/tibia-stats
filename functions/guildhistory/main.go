@@ -82,7 +82,7 @@ type historyRecord struct {
 }
 
 func getGuildMemberHistory(memberRepository *dynamo.GuildMemberRepository, guild string) ([]historyRecord, error) {
-	guildHistory, err := memberRepository.GetGuildMembersHistory(guild, 30)
+	guildHistory, err := memberRepository.GetGuildMembersHistory(guild, 7)
 	if err != nil {
 		return nil, err
 	}
