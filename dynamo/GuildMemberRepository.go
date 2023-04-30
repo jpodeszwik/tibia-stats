@@ -113,7 +113,7 @@ func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain
 	m := map[string]interface{}{
 		"guildName":      guild,
 		"lowerGuildName": strings.ToLower(guild),
-		"date":           time.Now().Format(isotime),
+		"date":           time.Now().Format(isoDate),
 		"members":        mem,
 	}
 

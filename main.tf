@@ -746,3 +746,83 @@ resource "aws_dynamodb_table" "guild_exp_table" {
     Table = "tibia-guild-exp"
   }
 }
+
+resource "aws_iam_role" "get_guild_exp_role" {
+  name               = "get_guild_exp_role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  managed_policy_arns = [
+    aws_iam_policy.lambda_log_policy.arn
+  ]
+
+  inline_policy {
+    name   = "get_guild_exp_policy"
+    policy = jsonencode({
+      Version   = "2012-10-17",
+      Statement = [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "dynamodb:Query",
+            "dynamodb:Scan",
+          ]
+          "Resource" : [
+            aws_dynamodb_table.guild_exp_table.arn,
+            "${aws_dynamodb_table.guild_exp_table.arn}/*",
+          ]
+        }
+      ]
+    })
+  }
+}
+
+data "archive_file" "get_guild_exp" {
+  type        = "zip"
+  source_file = "functions/getguildexp/main"
+  output_path = "get_guild_exp.zip"
+}
+
+resource "aws_lambda_function" "get_guild_exp" {
+  function_name    = "get-guild-exp"
+  filename         = data.archive_file.get_guild_exp.output_path
+  source_code_hash = data.archive_file.get_guild_exp.output_base64sha256
+
+  role    = aws_iam_role.get_guild_exp_role.arn
+  handler = "main"
+
+  runtime = "go1.x"
+
+  timeout = 10
+
+  environment {
+    variables = {
+      GUILD_EXP_TABLE_NAME = aws_dynamodb_table.guild_exp_table.name
+      GUILD_EXP_GUILD_NAME_DATE_INDEX = "guildName-date-index"
+    }
+  }
+}
+
+resource "aws_apigatewayv2_integration" "get_guild_exp" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  integration_uri        = aws_lambda_function.get_guild_exp.invoke_arn
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "get_guild_exp" {
+  api_id = aws_apigatewayv2_api.tibia.id
+
+  route_key = "GET /guildExp/{guildName}"
+  target    = "integrations/${aws_apigatewayv2_integration.get_guild_exp.id}"
+}
+
+resource "aws_lambda_permission" "get_guild_exp" {
+  statement_id  = "get_guild_exp"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_guild_exp.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
+}

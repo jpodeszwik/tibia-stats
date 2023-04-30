@@ -12,7 +12,7 @@ import (
 	"tibia-stats/slices"
 )
 
-const isotime = "2006-01-02"
+const isoDate = "2006-01-02"
 
 type ExpRepository struct {
 	dynamoDB  *dynamodb.Client
@@ -100,7 +100,7 @@ func (d ExpRepository) GetExpHistory(name string, limit int) ([]domain.ExpHistor
 func mapExpData(ed domain.ExpData) types.WriteRequest {
 	m := map[string]interface{}{
 		"playerName": ed.Name,
-		"date":       ed.Date.Format(isotime),
+		"date":       ed.Date.Format(isoDate),
 		"exp":        ed.Exp,
 	}
 

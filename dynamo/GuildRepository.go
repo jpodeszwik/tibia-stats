@@ -26,7 +26,7 @@ func (d *GuildRepository) ListGuilds() ([]string, error) {
 			"date": {
 				ComparisonOperator: types.ComparisonOperatorEq,
 				AttributeValueList: []types.AttributeValue{
-					&types.AttributeValueMemberS{Value: time.Now().Add(-24 * time.Hour).Format(isotime)},
+					&types.AttributeValueMemberS{Value: time.Now().Add(-24 * time.Hour).Format(isoDate)},
 				},
 			},
 		},
@@ -58,7 +58,7 @@ func (d *GuildRepository) ListGuilds() ([]string, error) {
 func (d *GuildRepository) StoreGuilds(guilds []string) error {
 	m := map[string]interface{}{
 		"guilds": guilds,
-		"date":   time.Now().Format(isotime),
+		"date":   time.Now().Format(isoDate),
 	}
 
 	marshalled, err := attributevalue.MarshalMap(m)

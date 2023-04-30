@@ -99,5 +99,10 @@ func InitializeGuildExpRepository() (*GuildExpRepository, error) {
 		return nil, errors.New("GUILD_EXP_TABLE_NAME not set")
 	}
 
-	return NewGuildExpRepository(client, guildExpTable), nil
+	guildNameDateIndex, exists := os.LookupEnv("GUILD_EXP_GUILD_NAME_DATE_INDEX")
+	if !exists {
+		return nil, errors.New("GUILD_EXP_GUILD_NAME_DATE_INDEX not set")
+	}
+
+	return NewGuildExpRepository(client, guildExpTable, guildNameDateIndex), nil
 }
