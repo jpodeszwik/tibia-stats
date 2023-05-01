@@ -18,6 +18,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	guildsRepository, err := dynamo.InitializeGuildRepository()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	apiClient := tibia.NewApiClient()
 	ot := scraper.NewOnlineScraper(apiClient)
 	ot.Start()
@@ -27,6 +32,9 @@ func main() {
 
 	guildExperience := scraper.NewGuildExperience(apiClient, tracker.NewGuildExp(guildExpRepository))
 	guildExperience.Start()
+
+	guildScraper := scraper.NewGuilds(apiClient, tracker.NewGuilds(guildsRepository))
+	guildScraper.Start()
 
 	select {}
 }

@@ -710,6 +710,8 @@ data "aws_iam_policy_document" "allow_death_tracker_death_table" {
       "${aws_dynamodb_table.death_table.arn}/*",
       aws_dynamodb_table.guild_exp_table.arn,
       "${aws_dynamodb_table.guild_exp_table.arn}/*",
+      aws_dynamodb_table.guilds_table.arn,
+      "${aws_dynamodb_table.guilds_table.arn}/*",
     ]
   }
 }

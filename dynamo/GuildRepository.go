@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var magicDate = time.Time{}.Format(isoDate)
+
 type GuildRepository struct {
 	client    *dynamodb.Client
 	tableName string
@@ -26,7 +28,7 @@ func (d *GuildRepository) ListGuilds() ([]string, error) {
 			"date": {
 				ComparisonOperator: types.ComparisonOperatorEq,
 				AttributeValueList: []types.AttributeValue{
-					&types.AttributeValueMemberS{Value: time.Now().Add(-24 * time.Hour).Format(isoDate)},
+					&types.AttributeValueMemberS{Value: magicDate},
 				},
 			},
 		},
@@ -58,7 +60,7 @@ func (d *GuildRepository) ListGuilds() ([]string, error) {
 func (d *GuildRepository) StoreGuilds(guilds []string) error {
 	m := map[string]interface{}{
 		"guilds": guilds,
-		"date":   time.Now().Format(isoDate),
+		"date":   magicDate,
 	}
 
 	marshalled, err := attributevalue.MarshalMap(m)
