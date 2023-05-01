@@ -12,13 +12,15 @@ const maxOfflineDuration = 4 * time.Hour
 
 type OnlineScraper struct {
 	api      *tibia.ApiClient
+	worlds   *Worlds
 	lastSeen map[string]time.Time
 	m        sync.RWMutex
 }
 
-func NewOnlineScraper(api *tibia.ApiClient) *OnlineScraper {
+func NewOnlineScraper(api *tibia.ApiClient, worlds *Worlds) *OnlineScraper {
 	return &OnlineScraper{
 		api:      api,
+		worlds:   worlds,
 		lastSeen: make(map[string]time.Time),
 		m:        sync.RWMutex{},
 	}
@@ -51,18 +53,11 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 		}
 	}
 
-	worlds, err := retry(func() ([]tibia.OverviewWorld, error) {
-		return ot.api.FetchWorlds()
-	}, 3)
-	if err != nil {
-		logger.Error.Printf("Failed to fetch worlds %v", err)
-		return
-	}
-
+	worlds := ot.worlds.getWorlds()
 	for _, world := range worlds {
 		for i := 0; i < 3; i++ {
 			players, err := retry(func() ([]tibia.OnlinePlayers, error) {
-				return ot.api.FetchOnlinePlayers(world.Name)
+				return ot.api.FetchOnlinePlayers(world)
 			}, 3)
 			if err != nil {
 				logger.Error.Printf("Failed to fetch players %v", err)

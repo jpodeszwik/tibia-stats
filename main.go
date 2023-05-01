@@ -26,16 +26,20 @@ func main() {
 	}
 
 	apiClient := tibia.NewApiClient()
-	ot := scraper.NewOnlineScraper(apiClient)
-	ot.Start()
 
-	dt := scraper.NewCharacterProfilesScraper(apiClient, ot, tracker.NewDeathTracker(dr))
-	dt.Start()
+	worldsScraper := scraper.NewWorlds(apiClient)
+	worldsScraper.Start()
 
-	guildExperience := scraper.NewGuildExperience(apiClient, tracker.NewGuildExp(guildExpRepository))
-	guildExperience.Start()
+	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
+	onlineScraper.Start()
 
-	guildScraper := scraper.NewGuilds(apiClient, tracker.NewGuilds(guildsRepository))
+	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, tracker.NewDeathTracker(dr))
+	characterProfilesScraper.Start()
+
+	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, tracker.NewGuildExp(guildExpRepository))
+	guildExperienceScraper.Start()
+
+	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, tracker.NewGuilds(guildsRepository))
 	guildScraper.Start()
 
 	logger.Info.Printf("Initialized in %v", time.Since(start))

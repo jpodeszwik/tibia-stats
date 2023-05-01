@@ -13,6 +13,7 @@ const guildExperienceRefreshInterval = 2 * time.Hour
 type GuildExperience struct {
 	api     *tibia.ApiClient
 	handler Handler[domain.GuildExp]
+	worlds  *Worlds
 }
 
 func (ge *GuildExperience) Start() {
@@ -27,17 +28,12 @@ func (ge *GuildExperience) Start() {
 
 func (ge *GuildExperience) fetchGuildsExperience() error {
 	start := time.Now()
-	worlds, err := retry(func() ([]tibia.OverviewWorld, error) {
-		return ge.api.FetchWorlds()
-	}, 3)
-	if err != nil {
-		return err
-	}
+	worlds := ge.worlds.getWorlds()
 	ret := make(map[string]int64)
 	for _, world := range worlds {
-		guildsExp, err := ge.fetchWorldGuildsExperience(world.Name)
+		guildsExp, err := ge.fetchWorldGuildsExperience(world)
 		if err != nil {
-			logger.Error.Printf("Failed to fetch experience for world %v", world.Name)
+			logger.Error.Printf("Failed to fetch experience for world %v", world)
 			continue
 		}
 		for guildName, exp := range guildsExp {
@@ -102,8 +98,12 @@ func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]
 	return guildExp, nil
 }
 
-func NewGuildExperience(client *tibia.ApiClient, handler Handler[domain.GuildExp]) *GuildExperience {
-	return &GuildExperience{api: client, handler: handler}
+func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, handler Handler[domain.GuildExp]) *GuildExperience {
+	return &GuildExperience{
+		api:     client,
+		worlds:  worlds,
+		handler: handler,
+	}
 }
 
 func retry[T any](f func() (T, error), times int) (T, error) {

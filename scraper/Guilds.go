@@ -9,21 +9,17 @@ import (
 type Guilds struct {
 	api     *tibia.ApiClient
 	handler Handler[[]string]
+	worlds  *Worlds
 }
 
 func (g *Guilds) fetchGuilds() error {
 	start := time.Now()
-	worlds, err := retry(func() ([]tibia.OverviewWorld, error) {
-		return g.api.FetchWorlds()
-	}, 3)
-	if err != nil {
-		return err
-	}
 
 	var allGuilds []string
+	worlds := g.worlds.getWorlds()
 	for _, world := range worlds {
 		guilds, err := retry(func() ([]tibia.OverviewGuild, error) {
-			return g.api.FetchGuilds(world.Name)
+			return g.api.FetchGuilds(world)
 		}, 5)
 		if err != nil {
 			return err
@@ -50,9 +46,10 @@ func (g *Guilds) Start() {
 	}()
 }
 
-func NewGuilds(api *tibia.ApiClient, handler Handler[[]string]) *Guilds {
+func NewGuilds(api *tibia.ApiClient, worlds *Worlds, handler Handler[[]string]) *Guilds {
 	return &Guilds{
 		api:     api,
 		handler: handler,
+		worlds:  worlds,
 	}
 }
