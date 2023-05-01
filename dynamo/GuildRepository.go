@@ -10,11 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"reflect"
-	"tibia-stats/slices"
+	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
 	"time"
 )
 
-var magicDate = time.Time{}.Format(isoDate)
+var magicDate = time.Time{}.Format(formats.IsoDate)
 
 type GuildRepository struct {
 	client    *dynamodb.Client

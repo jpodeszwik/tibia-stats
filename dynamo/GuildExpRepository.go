@@ -8,7 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strconv"
 	"tibia-stats/domain"
-	"tibia-stats/slices"
+	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
 	"time"
 )
 
@@ -21,7 +22,7 @@ type GuildExpRepository struct {
 func (ger *GuildExpRepository) StoreGuildExp(ge domain.GuildExp) error {
 	m := map[string]interface{}{
 		"guildName": ge.GuildName,
-		"date":      ge.Date.Format(isoDate),
+		"date":      ge.Date.Format(formats.IsoDate),
 		"exp":       ge.Exp,
 	}
 
@@ -60,7 +61,7 @@ func (ger *GuildExpRepository) GetExpHistory(guildName string, limit int) ([]dom
 	return slices.MapSlice(out.Items, func(in map[string]types.AttributeValue) domain.GuildExp {
 		m := make(map[string]string)
 		err = attributevalue.UnmarshalMap(in, &m)
-		parsedDate, _ := time.Parse(isoDate, m["date"])
+		parsedDate, _ := time.Parse(formats.IsoDate, m["date"])
 		exp, _ := strconv.ParseInt(m["exp"], 10, 64)
 
 		return domain.GuildExp{

@@ -9,7 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strings"
 	"tibia-stats/domain"
-	"tibia-stats/slices"
+	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
 	"time"
 )
 
@@ -113,7 +114,7 @@ func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain
 	m := map[string]interface{}{
 		"guildName":      guild,
 		"lowerGuildName": strings.ToLower(guild),
-		"date":           time.Now().Format(isoDate),
+		"date":           time.Now().Format(formats.IsoDate),
 		"members":        mem,
 	}
 

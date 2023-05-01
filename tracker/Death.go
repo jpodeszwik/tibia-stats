@@ -6,10 +6,9 @@ import (
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/formats"
 	"time"
 )
-
-const isoDateTime = "2006-01-02T15:04:05Z"
 
 type Death struct {
 	lastDeath map[string]time.Time
@@ -57,7 +56,7 @@ func (dh *Death) Handle(character *tibia.Characters) {
 	for i := len(character.Deaths) - 1; i >= 0; i-- {
 		death := character.Deaths[i]
 
-		parsedTime, err := time.Parse(isoDateTime, death.Time)
+		parsedTime, err := time.Parse(formats.IsoDateTime, death.Time)
 		if err != nil {
 			log.Printf("Failed to parse time %v", err)
 			continue

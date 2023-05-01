@@ -5,10 +5,9 @@ import (
 	"log"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
-	"tibia-stats/slices"
+	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
 )
-
-const isoDate = "2006-01-02"
 
 type LambdaEvent struct {
 	PathParameters GetExpEvent `json:"pathParameters"`
@@ -37,7 +36,7 @@ func HandleLambdaExecution(event LambdaEvent) ([]ExpRecord, error) {
 	return slices.MapSlice(expHistory, func(in domain.GuildExp) ExpRecord {
 		return ExpRecord{
 			Exp:  in.Exp,
-			Date: in.Date.Format(isoDate),
+			Date: in.Date.Format(formats.IsoDate),
 		}
 	}), nil
 }

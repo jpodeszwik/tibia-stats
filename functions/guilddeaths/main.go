@@ -5,7 +5,7 @@ import (
 	"log"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
-	"tibia-stats/slices"
+	"tibia-stats/utils/slices"
 )
 
 type LambdaEvent struct {

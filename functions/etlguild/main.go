@@ -6,8 +6,8 @@ import (
 	"sync"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
-	"tibia-stats/slices"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/slices"
 )
 
 func HandleLambdaExecution() {

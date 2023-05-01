@@ -8,11 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"tibia-stats/domain"
-	"tibia-stats/slices"
+	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
 	"time"
 )
-
-const isoDateTime = "2006-01-02T15:04:05Z"
 
 type DeathRepository struct {
 	client                 *dynamodb.Client
@@ -35,7 +34,7 @@ func (dr *DeathRepository) StoreDeaths(deaths []domain.Death) error {
 	for _, death := range deaths {
 		m := map[string]interface{}{
 			"characterName": death.CharacterName,
-			"time":          death.Time.Format(isoDateTime),
+			"time":          death.Time.Format(formats.IsoDateTime),
 			"reason":        death.Reason,
 		}
 		if death.Guild != "" {
@@ -148,7 +147,7 @@ func (dr *DeathRepository) GetGuildDeaths(guildName string) ([]domain.Death, err
 		m := make(map[string]string)
 		err = attributevalue.UnmarshalMap(item, &m)
 
-		parsedTime, err := time.Parse(isoDateTime, m["time"])
+		parsedTime, err := time.Parse(formats.IsoDateTime, m["time"])
 		if err != nil {
 			log.Printf("Failed to parse time %v", err)
 			return nil, err

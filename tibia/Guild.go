@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"tibia-stats/slices"
+	"tibia-stats/utils/slices"
 )
 
 type GuildMemberResponse struct {
