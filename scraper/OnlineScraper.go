@@ -51,7 +51,9 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 		}
 	}
 
-	worlds, err := ot.api.FetchWorlds()
+	worlds, err := retry(func() ([]tibia.OverviewWorld, error) {
+		return ot.api.FetchWorlds()
+	}, 3)
 	if err != nil {
 		log.Printf("Failed to fetch worlds %v", err)
 		return
@@ -59,7 +61,9 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 
 	for _, world := range worlds {
 		for i := 0; i < 3; i++ {
-			players, err := ot.api.FetchOnlinePlayers(world.Name)
+			players, err := retry(func() ([]tibia.OnlinePlayers, error) {
+				return ot.api.FetchOnlinePlayers(world.Name)
+			}, 3)
 			if err != nil {
 				log.Printf("Failed to fetch players %v", err)
 			} else {
