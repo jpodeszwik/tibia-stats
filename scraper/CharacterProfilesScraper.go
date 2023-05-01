@@ -5,7 +5,6 @@ import (
 	"log"
 	"sync"
 	"tibia-stats/tibia"
-	"tibia-stats/tracker"
 	"time"
 )
 
@@ -14,11 +13,11 @@ const workers = 4
 
 type CharacterProfilesScraper struct {
 	ot  *OnlineScraper
-	dh  *tracker.Death
+	dh  Handler[*tibia.Characters]
 	api *tibia.ApiClient
 }
 
-func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, dh *tracker.Death) *CharacterProfilesScraper {
+func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, dh Handler[*tibia.Characters]) *CharacterProfilesScraper {
 	return &CharacterProfilesScraper{
 		ot:  ot,
 		api: api,
@@ -72,10 +71,7 @@ func (dt *CharacterProfilesScraper) work(fetchProfilesWork <-chan string) {
 			continue
 		}
 
-		err = dt.dh.HandleProfileRefresh(character)
-		if err != nil {
-			log.Printf("Failed to handleProfileRefresh for character %v %v", characterName, err)
-		}
+		dt.dh.Handle(character)
 	}
 }
 

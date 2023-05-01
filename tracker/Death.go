@@ -25,10 +25,10 @@ func NewDeathTracker(repo *dynamo.DeathRepository) *Death {
 	}
 }
 
-func (dh *Death) HandleProfileRefresh(character *tibia.Characters) error {
+func (dh *Death) Handle(character *tibia.Characters) {
 	characterName := character.Character.Name
 	if len(character.Deaths) == 0 {
-		return nil
+		return
 	}
 
 	dh.m.RLock()
@@ -42,7 +42,7 @@ func (dh *Death) HandleProfileRefresh(character *tibia.Characters) error {
 		death, err := dh.repo.GetLastDeath(characterName)
 		if err != nil {
 			log.Printf("Failed to get last death")
-			return err
+			return
 		}
 
 		if death == nil {
@@ -92,6 +92,4 @@ func (dh *Death) HandleProfileRefresh(character *tibia.Characters) error {
 		dh.lastDeath[characterName] = maxDeathTime
 		dh.m.Unlock()
 	}
-
-	return nil
 }

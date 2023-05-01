@@ -3,13 +3,12 @@ package scraper
 import (
 	"log"
 	"tibia-stats/tibia"
-	"tibia-stats/tracker"
 	"time"
 )
 
 type Guilds struct {
 	api     *tibia.ApiClient
-	handler *tracker.Guilds
+	handler Handler[[]string]
 }
 
 func (g *Guilds) fetchGuilds() error {
@@ -51,7 +50,7 @@ func (g *Guilds) Start() {
 	}()
 }
 
-func NewGuilds(api *tibia.ApiClient, handler *tracker.Guilds) *Guilds {
+func NewGuilds(api *tibia.ApiClient, handler Handler[[]string]) *Guilds {
 	return &Guilds{
 		api:     api,
 		handler: handler,

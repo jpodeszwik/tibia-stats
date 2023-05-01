@@ -5,7 +5,6 @@ import (
 	"log"
 	"tibia-stats/domain"
 	"tibia-stats/tibia"
-	"tibia-stats/tracker"
 	"time"
 )
 
@@ -13,7 +12,7 @@ const guildExperienceRefreshInterval = 2 * time.Hour
 
 type GuildExperience struct {
 	api     *tibia.ApiClient
-	handler *tracker.GuildExp
+	handler Handler[domain.GuildExp]
 }
 
 func (ge *GuildExperience) Start() {
@@ -103,7 +102,7 @@ func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]
 	return guildExp, nil
 }
 
-func NewGuildExperience(client *tibia.ApiClient, handler *tracker.GuildExp) *GuildExperience {
+func NewGuildExperience(client *tibia.ApiClient, handler Handler[domain.GuildExp]) *GuildExperience {
 	return &GuildExperience{api: client, handler: handler}
 }
 
