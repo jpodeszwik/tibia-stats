@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 )
 
@@ -80,7 +80,7 @@ func (ac *ApiClient) get(url string) ([]byte, error) {
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				log.Printf("Failed to close body %s", err)
+				logger.Error.Printf("Failed to close body %s", err)
 			}
 		}()
 	}

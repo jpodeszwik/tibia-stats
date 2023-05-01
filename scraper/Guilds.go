@@ -1,8 +1,8 @@
 package scraper
 
 import (
-	"log"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"time"
 )
 
@@ -36,7 +36,7 @@ func (g *Guilds) fetchGuilds() error {
 
 	g.handler.Handle(allGuilds)
 
-	log.Printf("Finished fetching %v worlds in %v", len(worlds), time.Since(start))
+	logger.Info.Printf("Finished fetching %v worlds in %v", len(worlds), time.Since(start))
 	return nil
 }
 

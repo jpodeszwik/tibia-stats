@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"log"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 	"tibia-stats/utils/formats"
@@ -16,7 +15,6 @@ func (ge *GuildExp) Handle(exp domain.GuildExp) {
 	last, exists := ge.lastExp[exp.GuildName]
 
 	if !exists || last.Exp != exp.Exp || last.Date.Format(formats.IsoDate) != exp.Date.Format(formats.IsoDate) {
-		log.Printf("Storing %v", exp)
 		ge.repository.StoreGuildExp(exp)
 		ge.lastExp[exp.GuildName] = &exp
 	}

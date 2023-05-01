@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 )
 
@@ -64,7 +64,7 @@ func (ac *ApiClient) FetchGuild(guildName string) (*GuildResponse, error) {
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				log.Printf("Failed to close body %s", err)
+				logger.Error.Printf("Failed to close body %s", err)
 			}
 		}()
 	}
@@ -103,7 +103,7 @@ func (ac *ApiClient) FetchGuilds(world string) ([]OverviewGuild, error) {
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				log.Printf("Failed to close body %s", err)
+				logger.Error.Printf("Failed to close body %s", err)
 			}
 		}()
 	}

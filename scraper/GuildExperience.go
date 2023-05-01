@@ -2,9 +2,9 @@ package scraper
 
 import (
 	"fmt"
-	"log"
 	"tibia-stats/domain"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"time"
 )
 
@@ -37,7 +37,7 @@ func (ge *GuildExperience) fetchGuildsExperience() error {
 	for _, world := range worlds {
 		guildsExp, err := ge.fetchWorldGuildsExperience(world.Name)
 		if err != nil {
-			log.Printf("Failed to fetch experience for world %v", world.Name)
+			logger.Error.Printf("Failed to fetch experience for world %v", world.Name)
 			continue
 		}
 		for guildName, exp := range guildsExp {
@@ -45,7 +45,7 @@ func (ge *GuildExperience) fetchGuildsExperience() error {
 		}
 	}
 
-	log.Printf("Finished fetching %v worlds %v guilds experiences in %v", len(worlds), len(ret), time.Since(start))
+	logger.Info.Printf("Finished fetching %v worlds %v guilds experiences in %v", len(worlds), len(ret), time.Since(start))
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 )
 
@@ -52,7 +53,7 @@ func etlGuildMembers(ac *tibia.ApiClient, guildRepository *dynamo.GuildRepositor
 	close(worldJobs)
 
 	workers := 8
-	log.Printf("Fetching %v worlds with %v workers", len(worlds), workers)
+	logger.Info.Printf("Fetching %v worlds with %v workers", len(worlds), workers)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
@@ -69,18 +70,18 @@ func etlGuildMembers(ac *tibia.ApiClient, guildRepository *dynamo.GuildRepositor
 	}
 	wg.Wait()
 	close(worldGuilds)
-	log.Printf("Finished world fetching")
+	logger.Info.Printf("Finished world fetching")
 
 	allGuilds := make([]tibia.OverviewGuild, 0)
 	for worldResponse := range worldGuilds {
 		if worldResponse.err != nil {
-			log.Printf("Error fetchin world %v guilds", worldResponse.world)
+			logger.Error.Printf("Error fetching world %v guilds", worldResponse.world)
 			continue
 		}
 		allGuilds = append(allGuilds, worldResponse.guilds...)
 	}
 
-	log.Printf("Found %v guilds", len(allGuilds))
+	logger.Info.Printf("Found %v guilds", len(allGuilds))
 	allGuildsChan := make(chan string, 100)
 	go func() {
 		for _, guild := range allGuilds {
@@ -89,7 +90,7 @@ func etlGuildMembers(ac *tibia.ApiClient, guildRepository *dynamo.GuildRepositor
 		close(allGuildsChan)
 	}()
 
-	log.Printf("Fetching and storing %v guilds with %v workers", len(allGuilds), workers)
+	logger.Info.Printf("Fetching and storing %v guilds with %v workers", len(allGuilds), workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -97,14 +98,14 @@ func etlGuildMembers(ac *tibia.ApiClient, guildRepository *dynamo.GuildRepositor
 			for guildName := range allGuildsChan {
 				err := fetchAndStoreGuild(guildName, ac, memberRepository)
 				if err != nil {
-					log.Printf("Failed to store guild %s members %v", guildName, err)
+					logger.Error.Printf("Failed to store guild %s members %v", guildName, err)
 				}
 			}
 		}()
 	}
 	wg.Wait()
 
-	log.Printf("Done fetching and storing guilds")
+	logger.Info.Printf("Done fetching and storing guilds")
 	return nil
 }
 

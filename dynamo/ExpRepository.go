@@ -7,9 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"log"
 	"tibia-stats/domain"
 	"tibia-stats/utils/formats"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 )
 
@@ -20,7 +20,7 @@ type ExpRepository struct {
 
 func (d ExpRepository) StoreExperiences(expData []domain.ExpData) error {
 	expDataChunks := slices.SplitSlice(expData, 25)
-	log.Printf("Chunks %v", len(expDataChunks))
+	logger.Info.Printf("Chunks %v", len(expDataChunks))
 
 	expDataChan := make(chan []domain.ExpData, len(expDataChunks))
 	for _, chunk := range expDataChunks {
@@ -49,11 +49,11 @@ func (d ExpRepository) StoreExperiences(expData []domain.ExpData) error {
 	errs := make([]error, 0)
 	for i := 0; i < len(expDataChunks); i++ {
 		if i%100 == 0 && i != 0 {
-			log.Printf("%v done", i)
+			logger.Info.Printf("%v done", i)
 		}
 		err := <-ret
 		if err != nil {
-			log.Printf("Error storing %v", err)
+			logger.Error.Printf("Error storing %v", err)
 			errs = append(errs, err)
 		}
 	}
@@ -105,7 +105,7 @@ func mapExpData(ed domain.ExpData) types.WriteRequest {
 
 	marshalled, err := attributevalue.MarshalMap(m)
 	if err != nil {
-		log.Printf("Error marshalling json %v", err)
+		logger.Error.Printf("Error marshalling json %v", err)
 		return types.WriteRequest{}
 	}
 

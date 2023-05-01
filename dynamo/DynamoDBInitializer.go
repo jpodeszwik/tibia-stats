@@ -5,14 +5,14 @@ import (
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"log"
 	"os"
+	"tibia-stats/utils/logger"
 )
 
 func initializeDynamoDB() (client *dynamodb.Client, err error) {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		log.Printf("unable to load SDK config, %v", err)
+		logger.Error.Printf("unable to load SDK config, %v", err)
 		return nil, err
 	}
 
@@ -22,7 +22,7 @@ func initializeDynamoDB() (client *dynamodb.Client, err error) {
 func InitializeExpRepository() (*ExpRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
-		log.Printf("unable to initialize DynamoDB, %v", err)
+		logger.Error.Printf("unable to initialize DynamoDB, %v", err)
 		return nil, err
 	}
 
@@ -37,7 +37,7 @@ func InitializeExpRepository() (*ExpRepository, error) {
 func InitializeGuildMembersRepository() (*GuildMemberRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
-		log.Printf("unable to initialize DynamoDB, %v", err)
+		logger.Error.Printf("unable to initialize DynamoDB, %v", err)
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func InitializeGuildMembersRepository() (*GuildMemberRepository, error) {
 func InitializeGuildRepository() (*GuildRepository, error) {
 	client, err := initializeDynamoDB()
 	if err != nil {
-		log.Printf("unable to initialize DynamoDB, %v", err)
+		logger.Error.Printf("unable to initialize DynamoDB, %v", err)
 		return nil, err
 	}
 

@@ -1,8 +1,8 @@
 package tracker
 
 import (
-	"log"
 	"tibia-stats/dynamo"
+	"tibia-stats/utils/logger"
 )
 
 type Guilds struct {
@@ -12,7 +12,7 @@ type Guilds struct {
 func (g *Guilds) Handle(guilds []string) {
 	err := g.gr.StoreGuilds(guilds)
 	if err != nil {
-		log.Printf("%v", err)
+		logger.Error.Printf("%v", err)
 	}
 }
 

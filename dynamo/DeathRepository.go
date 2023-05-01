@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"log"
 	"tibia-stats/domain"
 	"tibia-stats/utils/formats"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 	"time"
 )
@@ -111,7 +111,7 @@ func (dr *DeathRepository) GetLastDeath(characterName string) (*domain.Death, er
 
 	parsedTime, err := time.Parse("2006-01-02T15:04:05Z", m["time"])
 	if err != nil {
-		log.Printf("Failed to parse time %v", err)
+		logger.Error.Printf("Failed to parse time %v", err)
 		return nil, err
 	}
 
@@ -149,7 +149,7 @@ func (dr *DeathRepository) GetGuildDeaths(guildName string) ([]domain.Death, err
 
 		parsedTime, err := time.Parse(formats.IsoDateTime, m["time"])
 		if err != nil {
-			log.Printf("Failed to parse time %v", err)
+			logger.Error.Printf("Failed to parse time %v", err)
 			return nil, err
 		}
 

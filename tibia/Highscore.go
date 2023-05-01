@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 )
 
@@ -54,7 +54,7 @@ func (ac *ApiClient) FetchHighscore(world string, profession Profession, highsco
 		defer func() {
 			err := resp.Body.Close()
 			if err != nil {
-				log.Printf("Failed to close body %s", err)
+				logger.Error.Printf("Failed to close body %s", err)
 			}
 		}()
 	}
@@ -95,7 +95,7 @@ func (ac *ApiClient) FetchAllHighscores(world string, highscoreType HighscoreTyp
 	for i := 0; i < 4*20; i++ {
 		highscoreResult := <-retChannel
 		if highscoreResult.err != nil {
-			log.Printf("Failed to fetch profession %s, %v", highscoreResult.profession, highscoreResult.err)
+			logger.Error.Printf("Failed to fetch profession %s, %v", highscoreResult.profession, highscoreResult.err)
 			err = highscoreResult.err
 		}
 		result = append(result, highscoreResult.response...)

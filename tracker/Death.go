@@ -1,12 +1,12 @@
 package tracker
 
 import (
-	"log"
 	"sync"
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 	"tibia-stats/tibia"
 	"tibia-stats/utils/formats"
+	"tibia-stats/utils/logger"
 	"time"
 )
 
@@ -40,7 +40,7 @@ func (dh *Death) Handle(character *tibia.Characters) {
 	} else {
 		death, err := dh.repo.GetLastDeath(characterName)
 		if err != nil {
-			log.Printf("Failed to get last death")
+			logger.Error.Printf("Failed to get last death")
 			return
 		}
 
@@ -58,7 +58,7 @@ func (dh *Death) Handle(character *tibia.Characters) {
 
 		parsedTime, err := time.Parse(formats.IsoDateTime, death.Time)
 		if err != nil {
-			log.Printf("Failed to parse time %v", err)
+			logger.Error.Printf("Failed to parse time %v", err)
 			continue
 		}
 
@@ -81,7 +81,7 @@ func (dh *Death) Handle(character *tibia.Characters) {
 			if err == nil {
 				break
 			} else {
-				log.Printf("Error %v storing deaths, retrying", err)
+				logger.Error.Printf("Error %v storing deaths, retrying", err)
 			}
 		}
 	}

@@ -1,9 +1,9 @@
 package scraper
 
 import (
-	"log"
 	"sync"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"time"
 )
 
@@ -25,7 +25,7 @@ func NewOnlineScraper(api *tibia.ApiClient) *OnlineScraper {
 }
 
 func (ot *OnlineScraper) Start() {
-	log.Printf("Starting")
+	logger.Info.Printf("Starting")
 
 	fetchPlayersTicker := time.NewTicker(fetchPlayersInterval)
 	ot.fetchOnlinePlayers()
@@ -55,7 +55,7 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 		return ot.api.FetchWorlds()
 	}, 3)
 	if err != nil {
-		log.Printf("Failed to fetch worlds %v", err)
+		logger.Error.Printf("Failed to fetch worlds %v", err)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 				return ot.api.FetchOnlinePlayers(world.Name)
 			}, 3)
 			if err != nil {
-				log.Printf("Failed to fetch players %v", err)
+				logger.Error.Printf("Failed to fetch players %v", err)
 			} else {
 				for _, player := range players {
 					newLastSeen[player.Name] = time.Now()
@@ -75,7 +75,7 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 		}
 	}
 
-	log.Printf("Finished fetching online players in %v, onlineCount %v", time.Since(start), len(newLastSeen))
+	logger.Info.Printf("Finished fetching online players in %v, onlineCount %v", time.Since(start), len(newLastSeen))
 	ot.m.Lock()
 	defer ot.m.Unlock()
 	ot.lastSeen = newLastSeen

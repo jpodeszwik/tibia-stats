@@ -7,6 +7,7 @@ import (
 	"tibia-stats/domain"
 	"tibia-stats/dynamo"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"tibia-stats/utils/slices"
 	"time"
 )
@@ -47,10 +48,10 @@ func fetchExperience(ac *tibia.ApiClient, expRepository *dynamo.ExpRepository) e
 		return err
 	}
 
-	log.Printf("Found %v worlds", len(worlds))
+	logger.Info.Printf("Found %v worlds", len(worlds))
 	jobsCount := len(worlds) * 4 * 20
 
-	log.Printf("%v jobs", jobsCount)
+	logger.Info.Printf("%v jobs", jobsCount)
 
 	jobs := make(chan fetchExperienceJob, jobsCount)
 	for _, world := range worlds {
@@ -67,13 +68,13 @@ func fetchExperience(ac *tibia.ApiClient, expRepository *dynamo.ExpRepository) e
 	fetchResults := make(chan fetchedHighscoresResult, jobsCount)
 	defer close(fetchResults)
 
-	log.Printf("Fetching highscores with %v workers", workers)
+	logger.Info.Printf("Fetching highscores with %v workers", workers)
 	for i := 0; i < workers; i++ {
 		go func() {
 			for job := range jobs {
 				err := fetchHighscore(ac, job, fetchResults)
 				if err != nil {
-					log.Printf("Error fetching highscore %v", err)
+					logger.Error.Printf("Error fetching highscore %v", err)
 				}
 			}
 		}()
@@ -82,7 +83,7 @@ func fetchExperience(ac *tibia.ApiClient, expRepository *dynamo.ExpRepository) e
 	allHighscores := make([]tibia.HighscoreResponse, 0)
 	for i := 0; i < jobsCount; i++ {
 		if i%100 == 0 && i != 0 {
-			log.Printf("%v done", i)
+			logger.Info.Printf("%v done", i)
 		}
 		res := <-fetchResults
 		if res.err == nil {
@@ -99,13 +100,13 @@ func fetchExperience(ac *tibia.ApiClient, expRepository *dynamo.ExpRepository) e
 		}
 	})
 
-	log.Printf("Storing Experiences")
+	logger.Info.Printf("Storing Experiences")
 	err = expRepository.StoreExperiences(expData)
 	if err != nil {
-		log.Printf("Error storing exp data")
+		logger.Error.Printf("Error storing exp data")
 	}
 
-	log.Printf("done")
+	logger.Info.Printf("done")
 	return err
 }
 
@@ -113,7 +114,7 @@ func fetchHighscore(ac *tibia.ApiClient, job fetchExperienceJob, fetchResults ch
 	for i := 1; i <= retries; i++ {
 		response, err := ac.FetchHighscore(job.world, job.profession, tibia.Exp, job.page)
 		if err != nil {
-			log.Printf("Error fetching highscore %v %v %v %v tries left", job.world, job.profession, job.page, retries-i)
+			logger.Error.Printf("Error fetching highscore %v %v %v %v tries left", job.world, job.profession, job.page, retries-i)
 			continue
 		}
 		fetchResults <- fetchedHighscoresResult{

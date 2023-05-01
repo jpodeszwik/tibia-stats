@@ -2,9 +2,9 @@ package scraper
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"tibia-stats/tibia"
+	"tibia-stats/utils/logger"
 	"time"
 )
 
@@ -26,7 +26,7 @@ func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, dh Han
 }
 
 func (dt *CharacterProfilesScraper) Start() {
-	log.Printf("Starting")
+	logger.Info.Printf("Starting")
 	go func() {
 		refreshProfilesTicker := time.NewTicker(refreshProfilesInterval)
 		dt.refreshProfiles()
@@ -55,19 +55,19 @@ func (dt *CharacterProfilesScraper) refreshProfiles() {
 		fetchProfileWork <- characterName
 		profilesFetched++
 		if profilesFetched%1000 == 0 {
-			log.Printf("Fetched %v out of %v profiles", profilesFetched, len(charactersToRefresh))
+			logger.Info.Printf("Fetched %v out of %v profiles", profilesFetched, len(charactersToRefresh))
 		}
 	}
 	close(fetchProfileWork)
 	wg.Wait()
-	log.Printf("Finished fetching %v character profiles in %v with %v workers", profilesFetched, time.Since(start), workers)
+	logger.Info.Printf("Finished fetching %v character profiles in %v with %v workers", profilesFetched, time.Since(start), workers)
 }
 
 func (dt *CharacterProfilesScraper) work(fetchProfilesWork <-chan string) {
 	for characterName := range fetchProfilesWork {
 		character, err := dt.fetchCharacter(characterName)
 		if err != nil {
-			log.Printf("Failed to fetch character of %v %v", characterName, err)
+			logger.Error.Printf("Failed to fetch character of %v %v", characterName, err)
 			continue
 		}
 

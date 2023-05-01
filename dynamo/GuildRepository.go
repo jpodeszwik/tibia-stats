@@ -8,8 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"log"
-	"reflect"
 	"tibia-stats/utils/formats"
 	"tibia-stats/utils/slices"
 	"time"
@@ -46,7 +44,6 @@ func (d *GuildRepository) ListGuilds() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("%v", reflect.TypeOf(m["guilds"]))
 		guilds, ok := m["guilds"].([]interface{})
 		if !ok {
 			return nil, errors.New("failed to deserialize guilds")
