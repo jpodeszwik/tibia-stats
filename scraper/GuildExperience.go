@@ -14,6 +14,7 @@ type GuildExperience struct {
 	api     *tibia.ApiClient
 	handler Handler[domain.GuildExp]
 	worlds  *Worlds
+	guilds  *Guilds
 }
 
 func (ge *GuildExperience) Start() {
@@ -46,23 +47,18 @@ func (ge *GuildExperience) fetchGuildsExperience() error {
 }
 
 func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]int64, error) {
-	guilds, err := retry(func() ([]tibia.OverviewGuild, error) {
-		return ge.api.FetchGuilds(world)
-	}, 3)
-	if err != nil {
-		return nil, err
-	}
+	guilds := ge.guilds.getGuilds(world)
 
 	playerGuild := make(map[string]string)
-	for _, overviewGuild := range guilds {
+	for _, guildName := range guilds {
 		guild, err := retry(func() (*tibia.GuildResponse, error) {
-			return ge.api.FetchGuild(overviewGuild.Name)
+			return ge.api.FetchGuild(guildName)
 		}, 3)
 		if err != nil {
 			return nil, err
 		}
 		for _, member := range guild.Members {
-			playerGuild[member.Name] = overviewGuild.Name
+			playerGuild[member.Name] = guildName
 		}
 	}
 
@@ -98,10 +94,11 @@ func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]
 	return guildExp, nil
 }
 
-func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, handler Handler[domain.GuildExp]) *GuildExperience {
+func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, guilds *Guilds, handler Handler[domain.GuildExp]) *GuildExperience {
 	return &GuildExperience{
 		api:     client,
 		worlds:  worlds,
+		guilds:  guilds,
 		handler: handler,
 	}
 }
