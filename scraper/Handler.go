@@ -1,5 +1,3 @@
 package scraper
 
-type Handler[T any] interface {
-	Handle(value T)
-}
+type Handler[T any] func(T)

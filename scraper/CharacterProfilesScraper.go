@@ -12,16 +12,16 @@ const refreshProfilesInterval = 30 * time.Minute
 const workers = 4
 
 type CharacterProfilesScraper struct {
-	ot  *OnlineScraper
-	dh  Handler[*tibia.Characters]
-	api *tibia.ApiClient
+	ot      *OnlineScraper
+	handler Handler[*tibia.Characters]
+	api     *tibia.ApiClient
 }
 
-func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, dh Handler[*tibia.Characters]) *CharacterProfilesScraper {
+func NewCharacterProfilesScraper(api *tibia.ApiClient, ot *OnlineScraper, handler Handler[*tibia.Characters]) *CharacterProfilesScraper {
 	return &CharacterProfilesScraper{
-		ot:  ot,
-		api: api,
-		dh:  dh,
+		ot:      ot,
+		api:     api,
+		handler: handler,
 	}
 }
 
@@ -71,7 +71,7 @@ func (dt *CharacterProfilesScraper) work(fetchProfilesWork <-chan string) {
 			continue
 		}
 
-		dt.dh.Handle(character)
+		dt.handler(character)
 	}
 }
 

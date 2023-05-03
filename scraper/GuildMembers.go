@@ -14,6 +14,7 @@ type GuildMembers struct {
 	worlds      *Worlds
 	guilds      *Guilds
 	playerGuild map[string]string
+	handler     Handler[map[string]string]
 	m           sync.RWMutex
 }
 
@@ -57,6 +58,7 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 	gm.m.Lock()
 	gm.playerGuild = playerGuild
 	gm.m.Unlock()
+	gm.handler(playerGuild)
 
 	logger.Info.Printf("Finished fetching %v guilds for members, %v memberships found in %v", guilds, len(playerGuild), time.Since(start))
 	return nil
@@ -81,17 +83,18 @@ func (gm *GuildMembers) fetchWorldGuildMembers(world string) (map[string][]strin
 	return guildMembers, nil
 }
 
-func (gm *GuildMembers) getPlayerGuild() map[string]string {
+func (gm *GuildMembers) GetPlayerGuild() map[string]string {
 	gm.m.RLock()
 	defer gm.m.RUnlock()
 	return gm.playerGuild
 }
 
-func NewGuildMembers(client *tibia.ApiClient, worlds *Worlds, guilds *Guilds) *GuildMembers {
+func NewGuildMembers(client *tibia.ApiClient, worlds *Worlds, guilds *Guilds, handler Handler[map[string]string]) *GuildMembers {
 	return &GuildMembers{
 		api:         client,
 		worlds:      worlds,
 		guilds:      guilds,
 		playerGuild: make(map[string]string),
+		handler:     handler,
 	}
 }

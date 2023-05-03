@@ -38,7 +38,7 @@ func (g *Guilds) fetchGuilds() error {
 	g.worldGuilds = worldGuilds
 	g.m.Unlock()
 
-	g.handler.Handle(allGuilds)
+	g.handler(allGuilds)
 
 	logger.Info.Printf("Finished fetching %v worlds guilds in %v", len(worlds), time.Since(start))
 	return nil

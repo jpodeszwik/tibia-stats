@@ -30,19 +30,21 @@ func main() {
 	worldsScraper := scraper.NewWorlds(apiClient)
 	worldsScraper.Start()
 
-	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, tracker.NewGuilds(guildsRepository))
+	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, tracker.NewGuilds(guildsRepository).Handle)
 	guildScraper.Start()
 
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
 	onlineScraper.Start()
 
-	guildMembersScraper := scraper.NewGuildMembers(apiClient, worldsScraper, guildScraper)
+	guildExpTracker := tracker.NewGuildExp(guildExpRepository)
+
+	guildMembersScraper := scraper.NewGuildMembers(apiClient, worldsScraper, guildScraper, guildExpTracker.HandleGuildMembers)
 	guildMembersScraper.Start()
 
-	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, tracker.NewDeathTracker(dr))
+	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, tracker.NewDeathTracker(dr).Handle)
 	characterProfilesScraper.Start()
 
-	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, guildMembersScraper, tracker.NewGuildExp(guildExpRepository))
+	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, guildMembersScraper, guildExpTracker.HandleWorldExperience)
 	guildExperienceScraper.Start()
 
 	logger.Info.Printf("Initialized in %v", time.Since(start))
