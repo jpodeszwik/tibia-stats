@@ -8,18 +8,17 @@ import (
 )
 
 type Guilds struct {
-	api         *tibia.ApiClient
-	handler     Handler[[]string]
-	worlds      *Worlds
-	worldGuilds map[string][]string
-	m           sync.RWMutex
+	api       *tibia.ApiClient
+	handler   Handler[[]string]
+	worlds    *Worlds
+	allGuilds []string
+	m         sync.RWMutex
 }
 
 func (g *Guilds) fetchGuilds() error {
 	start := time.Now()
 
 	var allGuilds []string
-	worldGuilds := make(map[string][]string)
 	worlds := g.worlds.getWorlds()
 	for _, world := range worlds {
 		guilds, err := retry(func() ([]tibia.OverviewGuild, error) {
@@ -31,11 +30,10 @@ func (g *Guilds) fetchGuilds() error {
 
 		for _, guild := range guilds {
 			allGuilds = append(allGuilds, guild.Name)
-			worldGuilds[world] = append(worldGuilds[world], guild.Name)
 		}
 	}
 	g.m.Lock()
-	g.worldGuilds = worldGuilds
+	g.allGuilds = allGuilds
 	g.m.Unlock()
 
 	g.handler(allGuilds)
@@ -44,10 +42,10 @@ func (g *Guilds) fetchGuilds() error {
 	return nil
 }
 
-func (g *Guilds) getGuilds(world string) []string {
+func (g *Guilds) getGuilds() []string {
 	g.m.RLock()
 	defer g.m.RUnlock()
-	return g.worldGuilds[world]
+	return g.allGuilds
 }
 
 func (g *Guilds) Start() {

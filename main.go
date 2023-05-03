@@ -46,7 +46,7 @@ func main() {
 	worldsScraper := scraper.NewWorlds(apiClient)
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
 	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, guildsTracker.Handle)
-	guildMembersScraper := scraper.NewGuildMembers(apiClient, worldsScraper, guildScraper, guildExpTracker.HandleGuildMembers)
+	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers)
 	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, deathTracker.Handle)
 	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, playerExpTracker.HandleHighScore))
 
