@@ -9,6 +9,11 @@ import (
 var (
 	Info  *log.Logger
 	Error *log.Logger
+	Debug *log.Logger
+
+	infoOutput  = os.Stdout
+	errorOutput = os.Stderr
+	debugOutput = io.Discard
 )
 
 const infoPrefix = "INFO: "
@@ -16,17 +21,22 @@ const errorPrefix = "ERROR: "
 
 func init() {
 	logfile, exists := os.LookupEnv("LOGFILE")
-	var output io.Writer
 	if exists {
-		var err error
-		output, err = os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		file, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatalf("Failed to open log file %v", err)
 		}
-		Info = log.New(output, infoPrefix, log.Ldate|log.Ltime|log.Lshortfile)
-		Error = log.New(output, errorPrefix, log.Ldate|log.Ltime|log.Lshortfile)
-	} else {
-		Info = log.New(os.Stdout, infoPrefix, log.Ldate|log.Ltime|log.Lshortfile)
-		Error = log.New(os.Stderr, errorPrefix, log.Ldate|log.Ltime|log.Lshortfile)
+
+		infoOutput = file
+		errorOutput = file
 	}
+
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "DEBUG" {
+		debugOutput = infoOutput
+	}
+
+	Info = log.New(infoOutput, infoPrefix, log.Ldate|log.Ltime|log.Lshortfile)
+	Error = log.New(errorOutput, errorPrefix, log.Ldate|log.Ltime|log.Lshortfile)
+	Debug = log.New(debugOutput, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 }

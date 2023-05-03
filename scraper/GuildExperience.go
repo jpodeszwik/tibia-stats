@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"fmt"
 	"tibia-stats/domain"
 	"tibia-stats/tibia"
 	"tibia-stats/utils/logger"
@@ -11,10 +10,10 @@ import (
 const guildExperienceRefreshInterval = 2 * time.Hour
 
 type GuildExperience struct {
-	api     *tibia.ApiClient
-	handler Handler[domain.GuildExp]
-	worlds  *Worlds
-	guilds  *Guilds
+	api          *tibia.ApiClient
+	handler      Handler[domain.GuildExp]
+	worlds       *Worlds
+	guildMembers *GuildMembers
 }
 
 func (ge *GuildExperience) Start() {
@@ -47,20 +46,7 @@ func (ge *GuildExperience) fetchGuildsExperience() error {
 }
 
 func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]int64, error) {
-	guilds := ge.guilds.getGuilds(world)
-
-	playerGuild := make(map[string]string)
-	for _, guildName := range guilds {
-		guild, err := retry(func() (*tibia.GuildResponse, error) {
-			return ge.api.FetchGuild(guildName)
-		}, 3)
-		if err != nil {
-			return nil, err
-		}
-		for _, member := range guild.Members {
-			playerGuild[member.Name] = guildName
-		}
-	}
+	playerGuild := ge.guildMembers.getPlayerGuild()
 
 	guildExp := make(map[string]int64)
 	for _, profession := range tibia.AllProfessions {
@@ -94,25 +80,11 @@ func (ge *GuildExperience) fetchWorldGuildsExperience(world string) (map[string]
 	return guildExp, nil
 }
 
-func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, guilds *Guilds, handler Handler[domain.GuildExp]) *GuildExperience {
+func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, guildMembers *GuildMembers, handler Handler[domain.GuildExp]) *GuildExperience {
 	return &GuildExperience{
-		api:     client,
-		worlds:  worlds,
-		guilds:  guilds,
-		handler: handler,
+		api:          client,
+		worlds:       worlds,
+		guildMembers: guildMembers,
+		handler:      handler,
 	}
-}
-
-func retry[T any](f func() (T, error), times int) (T, error) {
-	var errs []error
-	for i := 0; i < times; i++ {
-		val, err := f()
-		if err == nil {
-			return val, err
-		}
-		errs = append(errs, err)
-	}
-
-	var zero T
-	return zero, fmt.Errorf("failed after %v tries, %v", times, errs)
 }

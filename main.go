@@ -36,10 +36,13 @@ func main() {
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
 	onlineScraper.Start()
 
+	guildMembersScraper := scraper.NewGuildMembers(apiClient, worldsScraper, guildScraper)
+	guildMembersScraper.Start()
+
 	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, tracker.NewDeathTracker(dr))
 	characterProfilesScraper.Start()
 
-	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, guildScraper, tracker.NewGuildExp(guildExpRepository))
+	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, guildMembersScraper, tracker.NewGuildExp(guildExpRepository))
 	guildExperienceScraper.Start()
 
 	logger.Info.Printf("Initialized in %v", time.Since(start))
