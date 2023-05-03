@@ -38,7 +38,7 @@ func main() {
 	guildsTracker := tracker.NewGuilds(guildRepository)
 	deathTracker := tracker.NewDeathTracker(deathRepository)
 	guildExpTracker := tracker.NewGuildExp(guildExpRepository)
-	playerExpTracker := tracker.NewPlayerExp(highScoreRepository)
+	highScoreTracker := tracker.NewHighScore(highScoreRepository)
 
 	apiClient := tibia.NewApiClient()
 
@@ -48,7 +48,7 @@ func main() {
 	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, guildsTracker.Handle)
 	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers)
 	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, deathTracker.Handle)
-	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, playerExpTracker.HandleHighScore))
+	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, highScoreTracker.HandleHighScore))
 
 	logger.Info.Printf("Starting scrapers")
 	worldsScraper.Start()

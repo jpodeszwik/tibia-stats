@@ -6,11 +6,11 @@ import (
 	"tibia-stats/utils/logger"
 )
 
-type PlayerExp struct {
+type HighScore struct {
 	repo *dynamo.HighScoreRepository
 }
 
-func (pe *PlayerExp) HandleHighScore(experience domain.WorldExperience) {
+func (pe *HighScore) HandleHighScore(experience domain.WorldExperience) {
 	for {
 		err := pe.repo.StoreHighScore(experience)
 		if err != nil {
@@ -21,6 +21,6 @@ func (pe *PlayerExp) HandleHighScore(experience domain.WorldExperience) {
 	}
 }
 
-func NewPlayerExp(repo *dynamo.HighScoreRepository) *PlayerExp {
-	return &PlayerExp{repo: repo}
+func NewHighScore(repo *dynamo.HighScoreRepository) *HighScore {
+	return &HighScore{repo: repo}
 }
