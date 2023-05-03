@@ -64,7 +64,6 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 			for _, player := range onlinePlayers {
 				newLastSeen[player.Name] = time.Now()
 			}
-			break
 		}
 	}
 
