@@ -55,25 +55,23 @@ func (ot *OnlineScraper) fetchOnlinePlayers() {
 
 	worlds := ot.worlds.getWorlds()
 	for _, world := range worlds {
-		for i := 0; i < 3; i++ {
-			players, err := retry(func() ([]tibia.OnlinePlayers, error) {
-				return ot.api.FetchOnlinePlayers(world)
-			}, 3)
-			if err != nil {
-				logger.Error.Printf("Failed to fetch players %v", err)
-			} else {
-				for _, player := range players {
-					newLastSeen[player.Name] = time.Now()
-				}
-				break
+		onlinePlayers, err := retry(func() ([]tibia.OnlinePlayers, error) {
+			return ot.api.FetchOnlinePlayers(world)
+		}, 3)
+		if err != nil {
+			logger.Error.Printf("Failed to fetch players %v", err)
+		} else {
+			for _, player := range onlinePlayers {
+				newLastSeen[player.Name] = time.Now()
 			}
+			break
 		}
 	}
 
 	logger.Info.Printf("Finished fetching online players in %v, onlineCount %v", time.Since(start), len(newLastSeen))
 	ot.m.Lock()
-	defer ot.m.Unlock()
 	ot.lastSeen = newLastSeen
+	ot.m.Unlock()
 }
 
 func (ot *OnlineScraper) GetLastSeen() map[string]time.Time {

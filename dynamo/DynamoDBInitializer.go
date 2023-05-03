@@ -106,3 +106,17 @@ func InitializeGuildExpRepository() (*GuildExpRepository, error) {
 
 	return NewGuildExpRepository(client, guildExpTable, guildNameDateIndex), nil
 }
+
+func InitializeHighScoreRepository() (*HighScoreRepository, error) {
+	client, err := initializeDynamoDB()
+	if err != nil {
+		return nil, err
+	}
+
+	highScoreTable, exists := os.LookupEnv("HIGHSCORE_TABLE")
+	if !exists {
+		return nil, errors.New("HIGHSCORE_TABLE not set")
+	}
+
+	return NewHighScoreRepository(client, highScoreTable), nil
+}

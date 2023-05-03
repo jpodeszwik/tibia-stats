@@ -11,7 +11,9 @@ import (
 
 func main() {
 	start := time.Now()
-	dr, err := dynamo.InitializeDeathRepository()
+	logger.Info.Printf("Starting")
+
+	deathRepository, err := dynamo.InitializeDeathRepository()
 	if err != nil {
 		logger.Error.Fatal(err)
 	}
@@ -20,34 +22,51 @@ func main() {
 		logger.Error.Fatal(err)
 	}
 
-	guildsRepository, err := dynamo.InitializeGuildRepository()
+	guildRepository, err := dynamo.InitializeGuildRepository()
 	if err != nil {
 		logger.Error.Fatal(err)
 	}
 
+	highScoreRepository, err := dynamo.InitializeHighScoreRepository()
+	if err != nil {
+		logger.Error.Fatal(err)
+	}
+
+	logger.Info.Printf("Initializing repositories")
+
+	logger.Info.Printf("Initializing trackers")
+	guildsTracker := tracker.NewGuilds(guildRepository)
+	deathTracker := tracker.NewDeathTracker(deathRepository)
+	guildExpTracker := tracker.NewGuildExp(guildExpRepository)
+	playerExpTracker := tracker.NewPlayerExp(highScoreRepository)
+
 	apiClient := tibia.NewApiClient()
 
+	logger.Info.Printf("Initializing scrapers")
 	worldsScraper := scraper.NewWorlds(apiClient)
-	worldsScraper.Start()
-
-	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, tracker.NewGuilds(guildsRepository).Handle)
-	guildScraper.Start()
-
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
-	onlineScraper.Start()
-
-	guildExpTracker := tracker.NewGuildExp(guildExpRepository)
-
+	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, guildsTracker.Handle)
 	guildMembersScraper := scraper.NewGuildMembers(apiClient, worldsScraper, guildScraper, guildExpTracker.HandleGuildMembers)
+	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, deathTracker.Handle)
+	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, playerExpTracker.HandleHighScore))
+
+	logger.Info.Printf("Starting scrapers")
+	worldsScraper.Start()
+	onlineScraper.Start()
+	guildScraper.Start()
 	guildMembersScraper.Start()
-
-	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, tracker.NewDeathTracker(dr).Handle)
 	characterProfilesScraper.Start()
-
-	guildExperienceScraper := scraper.NewGuildExperience(apiClient, worldsScraper, guildMembersScraper, guildExpTracker.HandleWorldExperience)
-	guildExperienceScraper.Start()
+	highScoreScraper.Start()
 
 	logger.Info.Printf("Initialized in %v", time.Since(start))
 
 	select {}
+}
+
+func combineTrackers[T any](funcs ...func(T)) func(T) {
+	return func(t T) {
+		for _, f := range funcs {
+			f(t)
+		}
+	}
 }

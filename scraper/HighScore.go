@@ -10,10 +10,9 @@ import (
 const highScoreRefreshInterval = 2 * time.Hour
 
 type HighScore struct {
-	api          *tibia.ApiClient
-	handler      Handler[domain.WorldExperience]
-	worlds       *Worlds
-	guildMembers *GuildMembers
+	api     *tibia.ApiClient
+	handler Handler[domain.WorldExperience]
+	worlds  *Worlds
 }
 
 func (ge *HighScore) Start() {
@@ -36,6 +35,7 @@ func (ge *HighScore) fetchHighScores() error {
 			logger.Error.Printf("Failed to fetch highscore for world %v", world)
 			continue
 		}
+		logger.Debug.Printf("Finished fetching %v highscore", world)
 	}
 
 	logger.Info.Printf("Finished fetching %v worlds %v highScores in %v", len(worlds), len(ret), time.Since(start))
@@ -66,11 +66,10 @@ func (ge *HighScore) fetchHighscore(world string) error {
 	return nil
 }
 
-func NewGuildExperience(client *tibia.ApiClient, worlds *Worlds, guildMembers *GuildMembers, handler Handler[domain.WorldExperience]) *HighScore {
+func NewHighScore(client *tibia.ApiClient, worlds *Worlds, handler Handler[domain.WorldExperience]) *HighScore {
 	return &HighScore{
-		api:          client,
-		worlds:       worlds,
-		guildMembers: guildMembers,
-		handler:      handler,
+		api:     client,
+		worlds:  worlds,
+		handler: handler,
 	}
 }

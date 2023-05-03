@@ -712,6 +712,10 @@ data "aws_iam_policy_document" "allow_death_tracker_death_table" {
       "${aws_dynamodb_table.guild_exp_table.arn}/*",
       aws_dynamodb_table.guilds_table.arn,
       "${aws_dynamodb_table.guilds_table.arn}/*",
+      aws_dynamodb_table.guilds_table.arn,
+      "${aws_dynamodb_table.guilds_table.arn}/*",
+      aws_dynamodb_table.highscore_table.arn,
+      "${aws_dynamodb_table.highscore_table.arn}/*",
     ]
   }
 }
@@ -827,4 +831,25 @@ resource "aws_lambda_permission" "get_guild_exp" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
+}
+
+resource "aws_dynamodb_table" "highscore_table" {
+  name         = "tibia-highscore"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "worldName"
+  range_key    = "date"
+
+  attribute {
+    name = "worldName"
+    type = "S"
+  }
+
+  attribute {
+    name = "date"
+    type = "S"
+  }
+
+  tags = {
+    Table = "tibia-highscore"
+  }
 }
