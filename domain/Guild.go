@@ -14,7 +14,8 @@ type GuildMember struct {
 }
 
 type GuildExp struct {
-	GuildName string
-	Exp       int64
-	Date      time.Time
+	GuildName    string
+	HighScoreExp int64
+	GainedExp    int64
+	Date         time.Time
 }

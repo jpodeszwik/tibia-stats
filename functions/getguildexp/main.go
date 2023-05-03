@@ -18,8 +18,9 @@ type GetExpEvent struct {
 }
 
 type ExpRecord struct {
-	Date string `json:"date"`
-	Exp  int64  `json:"exp"`
+	Date         string `json:"date"`
+	HighScoreExp int64  `json:"exp"`
+	GainedExp    int64  `json:"gainedExp"`
 }
 
 func HandleLambdaExecution(event LambdaEvent) ([]ExpRecord, error) {
@@ -35,8 +36,9 @@ func HandleLambdaExecution(event LambdaEvent) ([]ExpRecord, error) {
 
 	return slices.MapSlice(expHistory, func(in domain.GuildExp) ExpRecord {
 		return ExpRecord{
-			Exp:  in.Exp,
-			Date: in.Date.Format(formats.IsoDate),
+			HighScoreExp: in.HighScoreExp,
+			GainedExp:    in.GainedExp,
+			Date:         in.Date.Format(formats.IsoDate),
 		}
 	}), nil
 }

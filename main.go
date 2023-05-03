@@ -37,7 +37,7 @@ func main() {
 	logger.Info.Printf("Initializing trackers")
 	guildsTracker := tracker.NewGuilds(guildRepository)
 	deathTracker := tracker.NewDeathTracker(deathRepository)
-	guildExpTracker := tracker.NewGuildExp(guildExpRepository)
+	guildExpTracker := tracker.NewGuildExp(guildExpRepository, highScoreRepository)
 	highScoreTracker := tracker.NewHighScore(highScoreRepository)
 
 	apiClient := tibia.NewApiClient()

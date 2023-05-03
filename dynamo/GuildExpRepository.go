@@ -23,7 +23,8 @@ func (ger *GuildExpRepository) StoreGuildExp(ge domain.GuildExp) error {
 	m := map[string]interface{}{
 		"guildName": ge.GuildName,
 		"date":      ge.Date.Format(formats.IsoDate),
-		"exp":       ge.Exp,
+		"exp":       ge.HighScoreExp,
+		"gainedExp": ge.GainedExp,
 	}
 
 	marshalled, err := attributevalue.MarshalMap(m)
@@ -62,12 +63,14 @@ func (ger *GuildExpRepository) GetExpHistory(guildName string, limit int) ([]dom
 		m := make(map[string]string)
 		err = attributevalue.UnmarshalMap(in, &m)
 		parsedDate, _ := time.Parse(formats.IsoDate, m["date"])
-		exp, _ := strconv.ParseInt(m["exp"], 10, 64)
+		highScoreExp, _ := strconv.ParseInt(m["exp"], 10, 64)
+		gainedExp, _ := strconv.ParseInt(m["gainedExp"], 10, 64)
 
 		return domain.GuildExp{
-			Date:      parsedDate,
-			Exp:       exp,
-			GuildName: m["guildName"],
+			Date:         parsedDate,
+			HighScoreExp: highScoreExp,
+			GainedExp:    gainedExp,
+			GuildName:    m["guildName"],
 		}
 	}), nil
 }

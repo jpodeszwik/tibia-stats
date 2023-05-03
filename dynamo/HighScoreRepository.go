@@ -19,7 +19,7 @@ type HighScoreRepository struct {
 func (hsr *HighScoreRepository) GetHighScore(worldName string, date time.Time) (*domain.WorldExperience, error) {
 	out, err := hsr.client.Query(context.Background(), &dynamodb.QueryInput{
 		TableName: aws.String(hsr.tableName),
-		Limit:     aws.Int32(int32(30)),
+		Limit:     aws.Int32(1),
 		KeyConditions: map[string]types.Condition{
 			"worldName": {
 				ComparisonOperator: types.ComparisonOperatorEq,

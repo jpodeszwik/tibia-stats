@@ -9,10 +9,11 @@ import (
 )
 
 type GuildExp struct {
-	lastExp      map[string]*domain.GuildExp
-	repository   *dynamo.GuildExpRepository
-	guildMembers map[string]string
-	m            sync.RWMutex
+	lastExp             map[string]*domain.GuildExp
+	guildExpRepository  *dynamo.GuildExpRepository
+	highScoreRepository *dynamo.HighScoreRepository
+	guildMembers        map[string]string
+	m                   sync.RWMutex
 }
 
 func (ge *GuildExp) HandleGuildMembers(guildMembers map[string]string) {
@@ -22,25 +23,39 @@ func (ge *GuildExp) HandleGuildMembers(guildMembers map[string]string) {
 }
 
 func (ge *GuildExp) HandleWorldExperience(exp domain.WorldExperience) {
+	now := time.Now()
+	previousDayHighScore, err := ge.highScoreRepository.GetHighScore(exp.World, now.Add(-24*time.Hour))
+	if err != nil {
+		return
+	}
+
 	ge.m.RLock()
 	playerGuild := ge.guildMembers
 	ge.m.RUnlock()
 
-	guildExperience := make(map[string]int64)
+	highScoreExp := make(map[string]int64)
+	gainedExp := make(map[string]int64)
 	for playerName, experience := range exp.Experience {
 		guild, exists := playerGuild[playerName]
 		if !exists {
 			continue
 		}
 
-		guildExperience[guild] += experience
+		highScoreExp[guild] += experience
+		if previousDayHighScore != nil {
+			previousDayExperience, exists := previousDayHighScore.Experience[playerName]
+			if exists {
+				gainedExp[guild] += experience - previousDayExperience
+			}
+		}
 	}
 
-	for guildName, experience := range guildExperience {
+	for guildName, experience := range highScoreExp {
 		ge.handleGuildExp(domain.GuildExp{
-			GuildName: guildName,
-			Exp:       experience,
-			Date:      time.Now(),
+			GuildName:    guildName,
+			HighScoreExp: experience,
+			GainedExp:    gainedExp[guildName],
+			Date:         now,
 		})
 	}
 }
@@ -48,16 +63,17 @@ func (ge *GuildExp) HandleWorldExperience(exp domain.WorldExperience) {
 func (ge *GuildExp) handleGuildExp(exp domain.GuildExp) {
 	last, exists := ge.lastExp[exp.GuildName]
 
-	if !exists || last.Exp != exp.Exp || last.Date.Format(formats.IsoDate) != exp.Date.Format(formats.IsoDate) {
-		ge.repository.StoreGuildExp(exp)
+	if !exists || last.HighScoreExp != exp.HighScoreExp || last.Date.Format(formats.IsoDate) != exp.Date.Format(formats.IsoDate) {
+		ge.guildExpRepository.StoreGuildExp(exp)
 		ge.lastExp[exp.GuildName] = &exp
 	}
 }
 
-func NewGuildExp(repository *dynamo.GuildExpRepository) *GuildExp {
+func NewGuildExp(guildExpRepository *dynamo.GuildExpRepository, highScoreRepository *dynamo.HighScoreRepository) *GuildExp {
 	return &GuildExp{
-		lastExp:      make(map[string]*domain.GuildExp),
-		repository:   repository,
-		guildMembers: make(map[string]string),
+		lastExp:             make(map[string]*domain.GuildExp),
+		guildExpRepository:  guildExpRepository,
+		highScoreRepository: highScoreRepository,
+		guildMembers:        make(map[string]string),
 	}
 }
