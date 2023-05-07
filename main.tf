@@ -20,34 +20,6 @@ provider "aws" {
 data "aws_region" "current" {
 }
 
-resource "aws_dynamodb_table" "exp_table" {
-  name         = "tibia-exp"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "playerName"
-  range_key    = "date"
-
-  attribute {
-    name = "playerName"
-    type = "S"
-  }
-
-  attribute {
-    name = "date"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name            = "playerName-date-index"
-    hash_key        = "playerName"
-    range_key       = "date"
-    projection_type = "ALL"
-  }
-
-  tags = {
-    Table = "tibia-exp"
-  }
-}
-
 resource "aws_dynamodb_table" "guild_members_table" {
   name         = "tibia-guild-members"
   billing_mode = "PAY_PER_REQUEST"
@@ -120,58 +92,6 @@ resource "aws_iam_policy" "lambda_log_policy" {
       }
     ]
   })
-}
-
-resource "aws_iam_role" "get_tibia_exp_role" {
-  name               = "get_tibia_exp_role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-
-  managed_policy_arns = [
-    aws_iam_policy.lambda_log_policy.arn
-  ]
-
-  inline_policy {
-    name   = "get_tibia_exp_inline_policy"
-    policy = jsonencode({
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "dynamodb:Query",
-            "dynamodb:Scan"
-          ]
-          "Resource" : "${aws_dynamodb_table.exp_table.arn}/*"
-        }
-      ]
-    })
-  }
-}
-
-data "archive_file" "get_exp" {
-  type        = "zip"
-  source_file = "functions/getexp/main"
-  output_path = "get_exp.zip"
-}
-
-resource "aws_lambda_function" "get_tibia_exp" {
-  function_name    = "get-tibia-exp"
-  filename         = data.archive_file.get_exp.output_path
-  source_code_hash = data.archive_file.get_exp.output_base64sha256
-
-  role    = aws_iam_role.get_tibia_exp_role.arn
-  handler = "main"
-
-
-  runtime = "go1.x"
-
-  timeout = 10
-
-  environment {
-    variables = {
-      TIBIA_EXP_TABLE = aws_dynamodb_table.exp_table.name
-    }
-  }
 }
 
 resource "aws_iam_role" "get_guild_members_history_role" {
@@ -272,57 +192,6 @@ resource "aws_lambda_function" "list_guilds" {
   environment {
     variables = {
       TIBIA_GUILDS_TABLE = aws_dynamodb_table.guilds_table.name
-    }
-  }
-}
-
-resource "aws_iam_role" "load_players_exp" {
-  name               = "load_players_exp"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-
-  managed_policy_arns = [
-    aws_iam_policy.lambda_log_policy.arn
-  ]
-
-  inline_policy {
-    name   = "load_players_exp_inline_policy"
-    policy = jsonencode({
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "dynamodb:BatchWriteItem",
-            "dynamodb:PutItem"
-          ]
-          "Resource" : aws_dynamodb_table.exp_table.arn
-        }
-      ]
-    })
-  }
-}
-
-data "archive_file" "load_players_exp" {
-  type        = "zip"
-  source_file = "functions/etlexp/main"
-  output_path = "load_players_exp.zip"
-}
-
-resource "aws_lambda_function" "load_players_exp" {
-  function_name    = "load-players-exp"
-  filename         = data.archive_file.load_players_exp.output_path
-  source_code_hash = data.archive_file.load_players_exp.output_base64sha256
-
-  role    = aws_iam_role.load_players_exp.arn
-  handler = "main"
-
-  runtime = "go1.x"
-
-  timeout = 600
-
-  environment {
-    variables = {
-      TIBIA_EXP_TABLE = aws_dynamodb_table.exp_table.name
     }
   }
 }
@@ -438,26 +307,6 @@ resource "aws_lambda_function" "list_guilds_deaths" {
   }
 }
 
-resource "aws_cloudwatch_event_rule" "load_player_exp" {
-  name                = "load-player-exp-schedule"
-  schedule_expression = "cron(0 11 * * ? *)"
-  is_enabled          = false
-}
-
-resource "aws_cloudwatch_event_target" "load_player_exp" {
-  rule      = aws_cloudwatch_event_rule.load_player_exp.name
-  target_id = "lambda"
-  arn       = aws_lambda_function.load_players_exp.arn
-}
-
-resource "aws_lambda_permission" "allow_cloudwatch_to_load_player_exp" {
-  statement_id  = "allow_cloudwatch_to_load_player_exp"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.load_players_exp.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.load_player_exp.arn
-}
-
 resource "aws_cloudwatch_event_rule" "load_guild_members" {
   name                = "load-guild-members-schedule"
   schedule_expression = "cron(0 11 * * ? *)"
@@ -492,31 +341,6 @@ resource "aws_apigatewayv2_stage" "tibia" {
   api_id      = aws_apigatewayv2_api.tibia.id
   name        = "$default"
   auto_deploy = true
-}
-
-resource "aws_apigatewayv2_integration" "get_player_exp" {
-  api_id = aws_apigatewayv2_api.tibia.id
-
-  integration_uri        = aws_lambda_function.get_tibia_exp.invoke_arn
-  integration_type       = "AWS_PROXY"
-  integration_method     = "POST"
-  payload_format_version = "2.0"
-}
-
-resource "aws_apigatewayv2_route" "get_player_exp" {
-  api_id = aws_apigatewayv2_api.tibia.id
-
-  route_key = "GET /playerExp/{playerName}"
-  target    = "integrations/${aws_apigatewayv2_integration.get_player_exp.id}"
-}
-
-resource "aws_lambda_permission" "api_gateway_get_player_exp" {
-  statement_id  = "api_gateway_get_player_exp"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.get_tibia_exp.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.tibia.execution_arn}/*/*"
 }
 
 resource "aws_apigatewayv2_integration" "list_guilds_deaths" {
