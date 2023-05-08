@@ -19,3 +19,8 @@ type GuildExp struct {
 	GainedExp    int64
 	Date         time.Time
 }
+
+type GuildEvent struct {
+	Name    string
+	Members []GuildMember
+}

@@ -2,24 +2,27 @@ package scraper
 
 import (
 	"sync"
+	"tibia-stats/domain"
 	"tibia-stats/tibia"
 	"tibia-stats/utils/logger"
+	"tibia-stats/utils/slices"
 	"time"
 )
 
 const guildMembersRefreshInterval = 2 * time.Hour
 
 type GuildMembers struct {
-	api         *tibia.ApiClient
-	guilds      *Guilds
-	playerGuild map[string]string
-	handler     Handler[map[string]string]
-	m           sync.RWMutex
+	api               *tibia.ApiClient
+	guilds            *Guilds
+	playerGuild       map[string]string
+	handler           Handler[map[string]string]
+	guildEventHandler Handler[domain.GuildEvent]
+	m                 sync.RWMutex
 }
 
 type workResult struct {
 	guildName string
-	members   []string
+	members   []domain.GuildMember
 	err       error
 }
 
@@ -60,9 +63,12 @@ func (gm *GuildMembers) initialFetch(workers int) error {
 						err:       err,
 					}
 				}
-				var members []string
+				var members []domain.GuildMember
 				for _, member := range guild.Members {
-					members = append(members, member.Name)
+					members = append(members, domain.GuildMember{
+						Name:  member.Name,
+						Level: member.Level,
+					})
 				}
 				result <- workResult{
 					guildName: guildName,
@@ -87,11 +93,17 @@ func (gm *GuildMembers) initialFetch(workers int) error {
 	for res := range result {
 		if res.err != nil {
 			err = res.err
+			// even though this will fail whole job we need to read all results to let workers finish
 			continue
 		}
 
+		gm.guildEventHandler(domain.GuildEvent{
+			Name:    res.guildName,
+			Members: res.members,
+		})
+
 		for _, member := range res.members {
-			playerGuild[member] = res.guildName
+			playerGuild[member.Name] = res.guildName
 		}
 	}
 	if err != nil {
@@ -120,6 +132,16 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 			return err
 		}
 
+		gm.guildEventHandler(domain.GuildEvent{
+			Name: guild.Name,
+			Members: slices.MapSlice(guild.Members, func(in tibia.GuildMemberResponse) domain.GuildMember {
+				return domain.GuildMember{
+					Name:  in.Name,
+					Level: in.Level,
+				}
+			}),
+		})
+
 		for _, member := range guild.Members {
 			playerGuild[member.Name] = guildName
 		}
@@ -140,11 +162,12 @@ func (gm *GuildMembers) GetPlayerGuild() map[string]string {
 	return gm.playerGuild
 }
 
-func NewGuildMembers(client *tibia.ApiClient, guilds *Guilds, handler Handler[map[string]string]) *GuildMembers {
+func NewGuildMembers(client *tibia.ApiClient, guilds *Guilds, handler Handler[map[string]string], guildEventHandler Handler[domain.GuildEvent]) *GuildMembers {
 	return &GuildMembers{
-		api:         client,
-		guilds:      guilds,
-		playerGuild: make(map[string]string),
-		handler:     handler,
+		api:               client,
+		guilds:            guilds,
+		playerGuild:       make(map[string]string),
+		handler:           handler,
+		guildEventHandler: guildEventHandler,
 	}
 }

@@ -540,6 +540,8 @@ data "aws_iam_policy_document" "allow_death_tracker_death_table" {
       "${aws_dynamodb_table.guilds_table.arn}/*",
       aws_dynamodb_table.highscore_table.arn,
       "${aws_dynamodb_table.highscore_table.arn}/*",
+      aws_dynamodb_table.guild_members_table.arn,
+      "${aws_dynamodb_table.guild_members_table.arn}/*",
     ]
   }
 }
