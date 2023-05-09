@@ -133,7 +133,7 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 		}
 
 		gm.guildEventHandler(domain.GuildEvent{
-			Name: guild.Name,
+			Name: guildName,
 			Members: slices.MapSlice(guild.Members, func(in tibia.GuildMemberResponse) domain.GuildMember {
 				return domain.GuildMember{
 					Name:  in.Name,
