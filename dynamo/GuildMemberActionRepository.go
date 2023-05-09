@@ -5,13 +5,18 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"strconv"
 	"tibia-stats/domain"
 	"tibia-stats/utils/formats"
+	"tibia-stats/utils/slices"
+	"time"
 )
 
 type GuildMemberActionRepository struct {
-	client    *dynamodb.Client
-	tableName string
+	client             *dynamodb.Client
+	tableName          string
+	guildNameTimeIndex string
 }
 
 func (g *GuildMemberActionRepository) StoreGuildMemberAction(ga domain.GuildMemberAction) error {
@@ -37,9 +42,60 @@ func (g *GuildMemberActionRepository) StoreGuildMemberAction(ga domain.GuildMemb
 	return err
 }
 
-func NewGuildMemberActionRepository(client *dynamodb.Client, tableName string) *GuildMemberActionRepository {
+func (g *GuildMemberActionRepository) GetActions(guildName string) ([]domain.GuildMemberAction, error) {
+	out, err := g.client.Query(context.Background(), &dynamodb.QueryInput{
+		TableName:        aws.String(g.tableName),
+		IndexName:        aws.String(g.guildNameTimeIndex),
+		ScanIndexForward: aws.Bool(false),
+		Limit:            aws.Int32(30),
+		KeyConditions: map[string]types.Condition{
+			"guildName": {
+				ComparisonOperator: types.ComparisonOperatorEq,
+				AttributeValueList: []types.AttributeValue{
+					&types.AttributeValueMemberS{Value: guildName},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(out.Items) == 0 {
+		return []domain.GuildMemberAction{}, nil
+	}
+
+	return slices.MapSliceWithError(out.Items, func(in map[string]types.AttributeValue) (domain.GuildMemberAction, error) {
+		m := make(map[string]string)
+		err = attributevalue.UnmarshalMap(in, &m)
+		if err != nil {
+			return domain.GuildMemberAction{}, err
+		}
+
+		level, err := strconv.Atoi(m["level"])
+		if err != nil {
+			return domain.GuildMemberAction{}, err
+		}
+
+		parsedTime, err := time.Parse(formats.IsoDateTime, m["time"])
+		if err != nil {
+			return domain.GuildMemberAction{}, err
+		}
+
+		return domain.GuildMemberAction{
+			GuildName:     m["guildName"],
+			Time:          parsedTime,
+			Level:         level,
+			CharacterName: m["characterName"],
+			Action:        domain.Action(m["action"]),
+		}, nil
+	})
+}
+
+func NewGuildMemberActionRepository(client *dynamodb.Client, tableName string, guildNameTimeIndex string) *GuildMemberActionRepository {
 	return &GuildMemberActionRepository{
-		client:    client,
-		tableName: tableName,
+		client:             client,
+		tableName:          tableName,
+		guildNameTimeIndex: guildNameTimeIndex,
 	}
 }

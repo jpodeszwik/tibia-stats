@@ -113,7 +113,7 @@ resource "aws_iam_role" "get_guild_members_history_role" {
             "dynamodb:Query",
             "dynamodb:Scan"
           ]
-          "Resource" : "${aws_dynamodb_table.guild_members_table.arn}/*"
+          "Resource" : "${aws_dynamodb_table.guild_member_action_table.arn}/*"
         }
       ]
     })
@@ -140,7 +140,7 @@ resource "aws_lambda_function" "get_tibia_guild_members_history" {
 
   environment {
     variables = {
-      TIBIA_GUILD_MEMBERS_TABLE = aws_dynamodb_table.guild_members_table.name
+      GUILD_MEMBER_ACTION_TABLE = aws_dynamodb_table.guild_member_action_table.name
     }
   }
 }

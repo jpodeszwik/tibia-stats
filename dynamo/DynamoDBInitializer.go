@@ -132,5 +132,10 @@ func InitializeGuildMemberActionRepository() (*GuildMemberActionRepository, erro
 		return nil, errors.New("GUILD_MEMBER_ACTION_TABLE not set")
 	}
 
-	return NewGuildMemberActionRepository(client, highScoreTable), nil
+	guildNameTimeIndex, exists := os.LookupEnv("GUILD_MEMBER_ACTION_TABLE_GUILD_NAME_TIME_INDEX")
+	if !exists {
+		guildNameTimeIndex = "guildName-time-characterName-index"
+	}
+
+	return NewGuildMemberActionRepository(client, highScoreTable, guildNameTimeIndex), nil
 }
