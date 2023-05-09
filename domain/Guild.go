@@ -24,3 +24,11 @@ type GuildEvent struct {
 	Name    string
 	Members []GuildMember
 }
+
+type GuildMemberAction struct {
+	GuildName     string
+	Time          time.Time
+	Level         int
+	CharacterName string
+	Action        Action
+}

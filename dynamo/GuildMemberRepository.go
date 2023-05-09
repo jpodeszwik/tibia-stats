@@ -104,6 +104,45 @@ func (d *GuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]d
 }
 
 func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain.GuildMember) error {
+	return d.storeGuildMembers(guild, members, time.Now().Format(formats.IsoDate))
+}
+
+func (d *GuildMemberRepository) StoreLastGuildMembers(guildName string, members []domain.GuildMember) error {
+	return d.storeGuildMembers(guildName, members, magicDate)
+}
+
+func (d *GuildMemberRepository) GetLastGuildMembers(guildName string) ([]domain.GuildMember, error) {
+	guild, err := d.queryGuild(&dynamodb.QueryInput{
+		TableName: aws.String(d.tableName),
+		IndexName: aws.String("guildName-date-index"),
+		Limit:     aws.Int32(1),
+		KeyConditions: map[string]types.Condition{
+			"guildName": {
+				ComparisonOperator: types.ComparisonOperatorEq,
+				AttributeValueList: []types.AttributeValue{
+					&types.AttributeValueMemberS{Value: guildName},
+				},
+			},
+			"date": {
+				ComparisonOperator: types.ComparisonOperatorEq,
+				AttributeValueList: []types.AttributeValue{
+					&types.AttributeValueMemberS{Value: magicDate},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(guild) == 0 {
+		return nil, nil
+	}
+
+	return guild[0].Members, nil
+}
+
+func (d *GuildMemberRepository) storeGuildMembers(guild string, members []domain.GuildMember, date string) error {
 	mem := slices.MapSlice(members, func(in domain.GuildMember) map[string]interface{} {
 		return map[string]interface{}{
 			"name":  in.Name,
@@ -114,7 +153,7 @@ func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain
 	m := map[string]interface{}{
 		"guildName":      guild,
 		"lowerGuildName": strings.ToLower(guild),
-		"date":           time.Now().Format(formats.IsoDate),
+		"date":           date,
 		"members":        mem,
 	}
 

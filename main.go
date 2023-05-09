@@ -37,6 +37,11 @@ func main() {
 		logger.Error.Fatal(err)
 	}
 
+	guildMemberActionRepository, err := dynamo.InitializeGuildMemberActionRepository()
+	if err != nil {
+		logger.Error.Fatal(err)
+	}
+
 	logger.Info.Printf("Initializing repositories")
 
 	logger.Info.Printf("Initializing trackers")
@@ -44,6 +49,7 @@ func main() {
 	deathTracker := tracker.NewDeathTracker(deathRepository)
 	guildExpTracker := tracker.NewGuildExp(guildExpRepository, highScoreRepository)
 	guildMembersTracker := tracker.NewGuildMembers(guildMemberRepository)
+	guildMemberActionTracker := tracker.NewGuildMemberAction(guildMemberRepository, guildMemberActionRepository)
 	highScoreTracker := tracker.NewHighScore(highScoreRepository)
 
 	apiClient := tibia.NewApiClient()
@@ -52,7 +58,7 @@ func main() {
 	worldsScraper := scraper.NewWorlds(apiClient)
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
 	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, guildsTracker.Handle)
-	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers, guildMembersTracker.HandleGuild)
+	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers, combineTrackers(guildMembersTracker.HandleGuild, guildMemberActionTracker.HandleGuild))
 	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, deathTracker.Handle)
 	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, highScoreTracker.HandleHighScore))
 

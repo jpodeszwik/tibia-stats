@@ -120,3 +120,17 @@ func InitializeHighScoreRepository() (*HighScoreRepository, error) {
 
 	return NewHighScoreRepository(client, highScoreTable), nil
 }
+
+func InitializeGuildMemberActionRepository() (*GuildMemberActionRepository, error) {
+	client, err := initializeDynamoDB()
+	if err != nil {
+		return nil, err
+	}
+
+	highScoreTable, exists := os.LookupEnv("GUILD_MEMBER_ACTION_TABLE")
+	if !exists {
+		return nil, errors.New("GUILD_MEMBER_ACTION_TABLE not set")
+	}
+
+	return NewGuildMemberActionRepository(client, highScoreTable), nil
+}

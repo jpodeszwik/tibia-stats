@@ -542,6 +542,8 @@ data "aws_iam_policy_document" "allow_death_tracker_death_table" {
       "${aws_dynamodb_table.highscore_table.arn}/*",
       aws_dynamodb_table.guild_members_table.arn,
       "${aws_dynamodb_table.guild_members_table.arn}/*",
+      aws_dynamodb_table.guild_member_action_table.arn,
+      "${aws_dynamodb_table.guild_member_action_table.arn}/*",
     ]
   }
 }
@@ -677,5 +679,32 @@ resource "aws_dynamodb_table" "highscore_table" {
 
   tags = {
     Table = "tibia-highscore"
+  }
+}
+
+resource "aws_dynamodb_table" "guild_member_action_table" {
+  name         = "tibia-guild-member-action"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "guildName"
+  range_key    = "time-characterName"
+
+  attribute {
+    name = "guildName"
+    type = "S"
+  }
+
+  attribute {
+    name = "time-characterName"
+    type = "S"
+  }
+
+  local_secondary_index {
+    name            = "guildName-time-characterName-index"
+    range_key       = "time-characterName"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Table = "tibia-guild-member-action"
   }
 }
