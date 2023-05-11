@@ -196,61 +196,6 @@ resource "aws_lambda_function" "list_guilds" {
   }
 }
 
-resource "aws_iam_role" "load_guild_members" {
-  name               = "load_guild_members"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-
-  managed_policy_arns = [
-    aws_iam_policy.lambda_log_policy.arn
-  ]
-
-  inline_policy {
-    name   = "load_guild_members_inline_policy"
-    policy = jsonencode({
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "dynamodb:BatchWriteItem",
-            "dynamodb:PutItem"
-          ]
-          "Resource" : [
-            aws_dynamodb_table.guild_members_table.arn,
-            aws_dynamodb_table.guilds_table.arn
-          ]
-        }
-      ]
-    })
-  }
-}
-
-data "archive_file" "load_guild_members" {
-  type        = "zip"
-  source_file = "functions/etlguild/main"
-  output_path = "load_guild_members.zip"
-}
-
-resource "aws_lambda_function" "load_guild_members" {
-  function_name    = "load-tibia-guild-members"
-  filename         = data.archive_file.load_guild_members.output_path
-  source_code_hash = data.archive_file.load_guild_members.output_base64sha256
-
-  role    = aws_iam_role.load_guild_members.arn
-  handler = "main"
-
-  runtime = "go1.x"
-
-  timeout = 300
-
-  environment {
-    variables = {
-      TIBIA_GUILD_MEMBERS_TABLE = aws_dynamodb_table.guild_members_table.name
-      TIBIA_GUILDS_TABLE        = aws_dynamodb_table.guilds_table.name
-    }
-  }
-}
-
 resource "aws_iam_role" "list_guilds_deaths_role" {
   name               = "list_guilds_deaths_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
@@ -305,25 +250,6 @@ resource "aws_lambda_function" "list_guilds_deaths" {
       DEATH_TABLE_GUILD_TIME_INDEX= "guild-time-index"
     }
   }
-}
-
-resource "aws_cloudwatch_event_rule" "load_guild_members" {
-  name                = "load-guild-members-schedule"
-  schedule_expression = "cron(0 11 * * ? *)"
-}
-
-resource "aws_cloudwatch_event_target" "load_guild_members" {
-  rule      = aws_cloudwatch_event_rule.load_guild_members.name
-  target_id = "lambda"
-  arn       = aws_lambda_function.load_guild_members.arn
-}
-
-resource "aws_lambda_permission" "allow_cloudwatch_to_load_guild_members" {
-  statement_id  = "allow_cloudwatch_to_load_guild_members"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.load_guild_members.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.load_guild_members.arn
 }
 
 resource "aws_apigatewayv2_api" "tibia" {
