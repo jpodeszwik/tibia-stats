@@ -9,31 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strings"
 	"tibia-stats/domain"
-	"tibia-stats/utils/formats"
 	"tibia-stats/utils/slices"
-	"time"
 )
 
 type GuildMemberRepository struct {
 	client    *dynamodb.Client
 	tableName string
-}
-
-func (d *GuildMemberRepository) GetGuildMembersHistory(guild string, limit int) ([]domain.Guild, error) {
-	return d.queryGuild(&dynamodb.QueryInput{
-		TableName:        aws.String(d.tableName),
-		IndexName:        aws.String("guildName-date-index"),
-		ScanIndexForward: aws.Bool(false),
-		Limit:            aws.Int32(int32(limit)),
-		KeyConditions: map[string]types.Condition{
-			"guildName": {
-				ComparisonOperator: types.ComparisonOperatorEq,
-				AttributeValueList: []types.AttributeValue{
-					&types.AttributeValueMemberS{Value: guild},
-				},
-			},
-		},
-	})
 }
 
 func (d *GuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]domain.Guild, error) {
@@ -101,10 +82,6 @@ func (d *GuildMemberRepository) queryGuild(queryInput *dynamodb.QueryInput) ([]d
 			Date:    date,
 		}, nil
 	})
-}
-
-func (d *GuildMemberRepository) StoreGuildMembers(guild string, members []domain.GuildMember) error {
-	return d.storeGuildMembers(guild, members, time.Now().Format(formats.IsoDate))
 }
 
 func (d *GuildMemberRepository) StoreLastGuildMembers(guildName string, members []domain.GuildMember) error {

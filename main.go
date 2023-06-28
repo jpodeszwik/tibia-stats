@@ -53,7 +53,6 @@ func main() {
 	guildsTracker := tracker.NewGuilds(guildRepository)
 	deathTracker := tracker.NewDeathTracker(deathRepository)
 	guildExpTracker := tracker.NewGuildExp(guildExpRepository, highScoreRepository)
-	guildMembersTracker := tracker.NewGuildMembers(guildMemberRepository)
 	guildMemberActionTracker := tracker.NewGuildMemberAction(guildMemberRepository, guildMemberActionRepository)
 	highScoreTracker := tracker.NewHighScore(highScoreRepository)
 
@@ -63,9 +62,9 @@ func main() {
 	worldsScraper := scraper.NewWorlds(apiClient)
 	onlineScraper := scraper.NewOnlineScraper(apiClient, worldsScraper)
 	guildScraper := scraper.NewGuilds(apiClient, worldsScraper, guildsTracker.Handle)
-	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers, combineTrackers(guildMembersTracker.HandleGuild, guildMemberActionTracker.HandleGuild))
+	guildMembersScraper := scraper.NewGuildMembers(apiClient, guildScraper, guildExpTracker.HandleGuildMembers, guildMemberActionTracker.HandleGuild)
 	characterProfilesScraper := scraper.NewCharacterProfilesScraper(apiClient, onlineScraper, deathTracker.Handle)
-	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineTrackers(guildExpTracker.HandleWorldExperience, highScoreTracker.HandleHighScore))
+	highScoreScraper := scraper.NewHighScore(apiClient, worldsScraper, combineHandlers(guildExpTracker.HandleWorldExperience, highScoreTracker.HandleHighScore))
 
 	logger.Info.Printf("Starting scrapers")
 	worldsScraper.Start()
@@ -91,7 +90,7 @@ func enableProfiler() {
 	}()
 }
 
-func combineTrackers[T any](funcs ...func(T)) func(T) {
+func combineHandlers[T any](funcs ...func(T)) func(T) {
 	return func(t T) {
 		for _, f := range funcs {
 			f(t)
