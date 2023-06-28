@@ -12,12 +12,12 @@ import (
 const guildMembersRefreshInterval = 2 * time.Hour
 
 type GuildMembers struct {
-	api               *tibia.ApiClient
-	guilds            *Guilds
-	playerGuild       map[string]string
-	handler           Handler[map[string]string]
-	guildEventHandler Handler[domain.GuildEvent]
-	m                 sync.RWMutex
+	api                *tibia.ApiClient
+	guilds             *Guilds
+	playerGuild        map[string]string
+	playerGuildHandler Handler[map[string]string]
+	guildEventHandler  Handler[domain.GuildEvent]
+	m                  sync.RWMutex
 }
 
 type workResult struct {
@@ -114,7 +114,7 @@ func (gm *GuildMembers) initialFetch(workers int) error {
 	gm.m.Lock()
 	gm.playerGuild = playerGuild
 	gm.m.Unlock()
-	gm.handler(playerGuild)
+	gm.playerGuildHandler(playerGuild)
 
 	logger.Info.Printf("Finished fetching %v guilds members with %v workers, %v memberships found in %v", len(guilds), workers, len(playerGuild), time.Since(start))
 	return nil
@@ -151,7 +151,7 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 	gm.m.Lock()
 	gm.playerGuild = playerGuild
 	gm.m.Unlock()
-	gm.handler(playerGuild)
+	gm.playerGuildHandler(playerGuild)
 
 	logger.Info.Printf("Finished fetching %v guilds for members, %v memberships found in %v", len(guilds), len(playerGuild), time.Since(start))
 	return nil
@@ -159,10 +159,10 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 
 func NewGuildMembers(client *tibia.ApiClient, guilds *Guilds, handler Handler[map[string]string], guildEventHandler Handler[domain.GuildEvent]) *GuildMembers {
 	return &GuildMembers{
-		api:               client,
-		guilds:            guilds,
-		playerGuild:       make(map[string]string),
-		handler:           handler,
-		guildEventHandler: guildEventHandler,
+		api:                client,
+		guilds:             guilds,
+		playerGuild:        make(map[string]string),
+		playerGuildHandler: handler,
+		guildEventHandler:  guildEventHandler,
 	}
 }
