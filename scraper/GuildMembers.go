@@ -157,12 +157,6 @@ func (gm *GuildMembers) fetchGuildMembers() error {
 	return nil
 }
 
-func (gm *GuildMembers) GetPlayerGuild() map[string]string {
-	gm.m.RLock()
-	defer gm.m.RUnlock()
-	return gm.playerGuild
-}
-
 func NewGuildMembers(client *tibia.ApiClient, guilds *Guilds, handler Handler[map[string]string], guildEventHandler Handler[domain.GuildEvent]) *GuildMembers {
 	return &GuildMembers{
 		api:               client,
