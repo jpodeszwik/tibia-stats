@@ -27,6 +27,7 @@ type workResult struct {
 }
 
 func (gm *GuildMembers) Start() {
+	logger.Info.Printf("Starting")
 	ticker := time.NewTicker(guildMembersRefreshInterval)
 	err := gm.initialFetch(4)
 	if err != nil {

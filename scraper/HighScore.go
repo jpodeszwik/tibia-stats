@@ -16,6 +16,7 @@ type HighScore struct {
 }
 
 func (ge *HighScore) Start() {
+	logger.Info.Printf("Starting")
 	go func() {
 		ticker := time.NewTicker(highScoreRefreshInterval)
 		ge.fetchHighScores()

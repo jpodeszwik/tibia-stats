@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	"net/http/pprof"
 	"tibia-stats/dynamo"
 	"tibia-stats/scraper"
 	"tibia-stats/tibia"
@@ -13,6 +15,9 @@ func main() {
 	start := time.Now()
 	logger.Info.Printf("Starting")
 
+	enableProfiler()
+
+	logger.Info.Printf("Starting repositories")
 	deathRepository, err := dynamo.InitializeDeathRepository()
 	if err != nil {
 		logger.Error.Fatal(err)
@@ -73,6 +78,17 @@ func main() {
 	logger.Info.Printf("Initialized in %v", time.Since(start))
 
 	select {}
+}
+
+func enableProfiler() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+
+	go func() {
+		logger.Info.Printf("Starting profiler on port 7777")
+		err := http.ListenAndServe(":7777", mux)
+		logger.Error.Printf("Error starting profiler: %v", err)
+	}()
 }
 
 func combineTrackers[T any](funcs ...func(T)) func(T) {
